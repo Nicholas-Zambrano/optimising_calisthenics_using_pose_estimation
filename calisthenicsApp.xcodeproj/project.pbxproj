@@ -1,0 +1,805 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		6A0FC5A12F365B5A003800B3 /* pose_landmarker_lite.task in Resources */ = {isa = PBXBuildFile; fileRef = 6A0FC5A02F365B5A003800B3 /* pose_landmarker_lite.task */; };
+		6A28B3A02F2C0A74000E1FB1 /* MainMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A28B39F2F2C0A6D000E1FB1 /* MainMenuView.swift */; };
+		6AF3E89D2F22670F003FA03A /* calisthenicsAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AF3E89A2F22670F003FA03A /* calisthenicsAppApp.swift */; };
+		6AF3E89E2F22670F003FA03A /* ExerciseSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AF3E89B2F22670F003FA03A /* ExerciseSessionView.swift */; };
+		6AF3E89F2F22670F003FA03A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6AF3E8992F22670F003FA03A /* Assets.xcassets */; };
+		6AF3E8A22F226720003FA03A /* calisthenicsAppTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AF3E8A02F226720003FA03A /* calisthenicsAppTests.swift */; };
+		6AF3E8A62F226723003FA03A /* calisthenicsAppUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AF3E8A32F226723003FA03A /* calisthenicsAppUITests.swift */; };
+		6AF3E8A72F226723003FA03A /* calisthenicsAppUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AF3E8A42F226723003FA03A /* calisthenicsAppUITestsLaunchTests.swift */; };
+		6AF3E8A92F226995003FA03A /* pose_landmarker_heavy.task in Resources */ = {isa = PBXBuildFile; fileRef = 6AF3E8A82F226995003FA03A /* pose_landmarker_heavy.task */; };
+		6AF3E8AB2F228725003FA03A /* PoseDetectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AF3E8AA2F22871F003FA03A /* PoseDetectionManager.swift */; };
+		6AF3E8AD2F228A4C003FA03A /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AF3E8AC2F228A47003FA03A /* CameraView.swift */; };
+		6AF3E8AF2F228A63003FA03A /* LandmarkOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AF3E8AE2F228A5B003FA03A /* LandmarkOverlay.swift */; };
+		6AF3E8B22F22A848003FA03A /* pose_landmarker_full.task in Resources */ = {isa = PBXBuildFile; fileRef = 6AF3E8B12F22A848003FA03A /* pose_landmarker_full.task */; };
+		6AF3E8B42F22D875003FA03A /* BiometricEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AF3E8B32F22D86D003FA03A /* BiometricEvaluator.swift */; };
+		9BEB33F575C3C48579557F93 /* Pods_calisthenicsAppTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DF0932EFEA39DC0BDF5EDA13 /* Pods_calisthenicsAppTests.framework */; };
+		B112040D6B4E211BC32BEE02 /* Pods_calisthenicsApp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 07CFE150623D59E254E80DF5 /* Pods_calisthenicsApp.framework */; };
+		DEFBCF0245AA93CC272D47CF /* Pods_calisthenicsApp_calisthenicsAppUITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 431A15496C0FF1BA86F07C07 /* Pods_calisthenicsApp_calisthenicsAppUITests.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		6AA813122F22653F0044A7BA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6AA812FC2F22653D0044A7BA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6AA813032F22653D0044A7BA;
+			remoteInfo = calisthenicsApp;
+		};
+		6AA8131C2F22653F0044A7BA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6AA812FC2F22653D0044A7BA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6AA813032F22653D0044A7BA;
+			remoteInfo = calisthenicsApp;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		07CFE150623D59E254E80DF5 /* Pods_calisthenicsApp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_calisthenicsApp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		2BEB5E9D2AD06C358F7BF248 /* Pods-calisthenicsApp-calisthenicsAppUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-calisthenicsApp-calisthenicsAppUITests.debug.xcconfig"; path = "Target Support Files/Pods-calisthenicsApp-calisthenicsAppUITests/Pods-calisthenicsApp-calisthenicsAppUITests.debug.xcconfig"; sourceTree = "<group>"; };
+		431A15496C0FF1BA86F07C07 /* Pods_calisthenicsApp_calisthenicsAppUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_calisthenicsApp_calisthenicsAppUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		642CC0C51E00021814853BC0 /* Pods-calisthenicsApp-calisthenicsAppUITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-calisthenicsApp-calisthenicsAppUITests.release.xcconfig"; path = "Target Support Files/Pods-calisthenicsApp-calisthenicsAppUITests/Pods-calisthenicsApp-calisthenicsAppUITests.release.xcconfig"; sourceTree = "<group>"; };
+		6A0FC5A02F365B5A003800B3 /* pose_landmarker_lite.task */ = {isa = PBXFileReference; lastKnownFileType = file; path = pose_landmarker_lite.task; sourceTree = "<group>"; };
+		6A28B39F2F2C0A6D000E1FB1 /* MainMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMenuView.swift; sourceTree = "<group>"; };
+		6AA813042F22653D0044A7BA /* calisthenicsApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = calisthenicsApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6AA813112F22653F0044A7BA /* calisthenicsAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = calisthenicsAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		6AA8131B2F22653F0044A7BA /* calisthenicsAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = calisthenicsAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		6AF3E8992F22670F003FA03A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		6AF3E89A2F22670F003FA03A /* calisthenicsAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = calisthenicsAppApp.swift; sourceTree = "<group>"; };
+		6AF3E89B2F22670F003FA03A /* ExerciseSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseSessionView.swift; sourceTree = "<group>"; };
+		6AF3E8A02F226720003FA03A /* calisthenicsAppTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = calisthenicsAppTests.swift; sourceTree = "<group>"; };
+		6AF3E8A32F226723003FA03A /* calisthenicsAppUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = calisthenicsAppUITests.swift; sourceTree = "<group>"; };
+		6AF3E8A42F226723003FA03A /* calisthenicsAppUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = calisthenicsAppUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		6AF3E8A82F226995003FA03A /* pose_landmarker_heavy.task */ = {isa = PBXFileReference; lastKnownFileType = file; path = pose_landmarker_heavy.task; sourceTree = "<group>"; };
+		6AF3E8AA2F22871F003FA03A /* PoseDetectionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PoseDetectionManager.swift; sourceTree = "<group>"; };
+		6AF3E8AC2F228A47003FA03A /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraView.swift; sourceTree = "<group>"; };
+		6AF3E8AE2F228A5B003FA03A /* LandmarkOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LandmarkOverlay.swift; sourceTree = "<group>"; };
+		6AF3E8B02F228B93003FA03A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		6AF3E8B12F22A848003FA03A /* pose_landmarker_full.task */ = {isa = PBXFileReference; lastKnownFileType = file; path = pose_landmarker_full.task; sourceTree = "<group>"; };
+		6AF3E8B32F22D86D003FA03A /* BiometricEvaluator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiometricEvaluator.swift; sourceTree = "<group>"; };
+		6F3A4C4CCF38A9146AA53267 /* Pods-calisthenicsApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-calisthenicsApp.release.xcconfig"; path = "Target Support Files/Pods-calisthenicsApp/Pods-calisthenicsApp.release.xcconfig"; sourceTree = "<group>"; };
+		A5A761A7A4D0ED6147A4A02A /* Pods-calisthenicsAppTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-calisthenicsAppTests.release.xcconfig"; path = "Target Support Files/Pods-calisthenicsAppTests/Pods-calisthenicsAppTests.release.xcconfig"; sourceTree = "<group>"; };
+		DF0932EFEA39DC0BDF5EDA13 /* Pods_calisthenicsAppTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_calisthenicsAppTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		E6F6524E4FD4B0C25AA91D1E /* Pods-calisthenicsApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-calisthenicsApp.debug.xcconfig"; path = "Target Support Files/Pods-calisthenicsApp/Pods-calisthenicsApp.debug.xcconfig"; sourceTree = "<group>"; };
+		F975C58B307008629C658A47 /* Pods-calisthenicsAppTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-calisthenicsAppTests.debug.xcconfig"; path = "Target Support Files/Pods-calisthenicsAppTests/Pods-calisthenicsAppTests.debug.xcconfig"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		6A28B3A12F2C0AAE000E1FB1 /* Exercises */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Exercises;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		6AA813012F22653D0044A7BA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B112040D6B4E211BC32BEE02 /* Pods_calisthenicsApp.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6AA8130E2F22653F0044A7BA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9BEB33F575C3C48579557F93 /* Pods_calisthenicsAppTests.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6AA813182F22653F0044A7BA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DEFBCF0245AA93CC272D47CF /* Pods_calisthenicsApp_calisthenicsAppUITests.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		2F6135159DB94337179CBD7E /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				07CFE150623D59E254E80DF5 /* Pods_calisthenicsApp.framework */,
+				431A15496C0FF1BA86F07C07 /* Pods_calisthenicsApp_calisthenicsAppUITests.framework */,
+				DF0932EFEA39DC0BDF5EDA13 /* Pods_calisthenicsAppTests.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		6AA812FB2F22653D0044A7BA = {
+			isa = PBXGroup;
+			children = (
+				6AF3E89C2F22670F003FA03A /* calisthenicsApp */,
+				6AF3E8A12F226720003FA03A /* calisthenicsAppTests */,
+				6AF3E8A52F226723003FA03A /* calisthenicsAppUITests */,
+				6AA813052F22653D0044A7BA /* Products */,
+				E89486D46F2D8EED389C0F28 /* Pods */,
+				2F6135159DB94337179CBD7E /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		6AA813052F22653D0044A7BA /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				6AA813042F22653D0044A7BA /* calisthenicsApp.app */,
+				6AA813112F22653F0044A7BA /* calisthenicsAppTests.xctest */,
+				6AA8131B2F22653F0044A7BA /* calisthenicsAppUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		6AF3E89C2F22670F003FA03A /* calisthenicsApp */ = {
+			isa = PBXGroup;
+			children = (
+				6A28B3A12F2C0AAE000E1FB1 /* Exercises */,
+				6A28B39F2F2C0A6D000E1FB1 /* MainMenuView.swift */,
+				6AF3E8B32F22D86D003FA03A /* BiometricEvaluator.swift */,
+				6AF3E8B02F228B93003FA03A /* Info.plist */,
+				6AF3E8AE2F228A5B003FA03A /* LandmarkOverlay.swift */,
+				6AF3E8AC2F228A47003FA03A /* CameraView.swift */,
+				6AF3E8AA2F22871F003FA03A /* PoseDetectionManager.swift */,
+				6AF3E8B12F22A848003FA03A /* pose_landmarker_full.task */,
+				6AF3E8A82F226995003FA03A /* pose_landmarker_heavy.task */,
+				6AF3E8992F22670F003FA03A /* Assets.xcassets */,
+				6AF3E89A2F22670F003FA03A /* calisthenicsAppApp.swift */,
+				6AF3E89B2F22670F003FA03A /* ExerciseSessionView.swift */,
+				6A0FC5A02F365B5A003800B3 /* pose_landmarker_lite.task */,
+			);
+			path = calisthenicsApp;
+			sourceTree = "<group>";
+		};
+		6AF3E8A12F226720003FA03A /* calisthenicsAppTests */ = {
+			isa = PBXGroup;
+			children = (
+				6AF3E8A02F226720003FA03A /* calisthenicsAppTests.swift */,
+			);
+			path = calisthenicsAppTests;
+			sourceTree = "<group>";
+		};
+		6AF3E8A52F226723003FA03A /* calisthenicsAppUITests */ = {
+			isa = PBXGroup;
+			children = (
+				6AF3E8A32F226723003FA03A /* calisthenicsAppUITests.swift */,
+				6AF3E8A42F226723003FA03A /* calisthenicsAppUITestsLaunchTests.swift */,
+			);
+			path = calisthenicsAppUITests;
+			sourceTree = "<group>";
+		};
+		E89486D46F2D8EED389C0F28 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				E6F6524E4FD4B0C25AA91D1E /* Pods-calisthenicsApp.debug.xcconfig */,
+				6F3A4C4CCF38A9146AA53267 /* Pods-calisthenicsApp.release.xcconfig */,
+				2BEB5E9D2AD06C358F7BF248 /* Pods-calisthenicsApp-calisthenicsAppUITests.debug.xcconfig */,
+				642CC0C51E00021814853BC0 /* Pods-calisthenicsApp-calisthenicsAppUITests.release.xcconfig */,
+				F975C58B307008629C658A47 /* Pods-calisthenicsAppTests.debug.xcconfig */,
+				A5A761A7A4D0ED6147A4A02A /* Pods-calisthenicsAppTests.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		6AA813032F22653D0044A7BA /* calisthenicsApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6AA813252F22653F0044A7BA /* Build configuration list for PBXNativeTarget "calisthenicsApp" */;
+			buildPhases = (
+				141ABCB0342C2D6D60A1AF7D /* [CP] Check Pods Manifest.lock */,
+				6AA813002F22653D0044A7BA /* Sources */,
+				6AA813012F22653D0044A7BA /* Frameworks */,
+				6AA813022F22653D0044A7BA /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				6A28B3A12F2C0AAE000E1FB1 /* Exercises */,
+			);
+			name = calisthenicsApp;
+			productName = calisthenicsApp;
+			productReference = 6AA813042F22653D0044A7BA /* calisthenicsApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+		6AA813102F22653F0044A7BA /* calisthenicsAppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6AA813282F22653F0044A7BA /* Build configuration list for PBXNativeTarget "calisthenicsAppTests" */;
+			buildPhases = (
+				7DE55FC728AAD50181EBF7F8 /* [CP] Check Pods Manifest.lock */,
+				6AA8130D2F22653F0044A7BA /* Sources */,
+				6AA8130E2F22653F0044A7BA /* Frameworks */,
+				6AA8130F2F22653F0044A7BA /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6AA813132F22653F0044A7BA /* PBXTargetDependency */,
+			);
+			name = calisthenicsAppTests;
+			productName = calisthenicsAppTests;
+			productReference = 6AA813112F22653F0044A7BA /* calisthenicsAppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		6AA8131A2F22653F0044A7BA /* calisthenicsAppUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6AA8132B2F22653F0044A7BA /* Build configuration list for PBXNativeTarget "calisthenicsAppUITests" */;
+			buildPhases = (
+				559B902D2D346648B68C97AC /* [CP] Check Pods Manifest.lock */,
+				6AA813172F22653F0044A7BA /* Sources */,
+				6AA813182F22653F0044A7BA /* Frameworks */,
+				6AA813192F22653F0044A7BA /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6AA8131D2F22653F0044A7BA /* PBXTargetDependency */,
+			);
+			name = calisthenicsAppUITests;
+			productName = calisthenicsAppUITests;
+			productReference = 6AA8131B2F22653F0044A7BA /* calisthenicsAppUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		6AA812FC2F22653D0044A7BA /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2620;
+				LastUpgradeCheck = 2620;
+				TargetAttributes = {
+					6AA813032F22653D0044A7BA = {
+						CreatedOnToolsVersion = 26.2;
+					};
+					6AA813102F22653F0044A7BA = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = 6AA813032F22653D0044A7BA;
+					};
+					6AA8131A2F22653F0044A7BA = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = 6AA813032F22653D0044A7BA;
+					};
+				};
+			};
+			buildConfigurationList = 6AA812FF2F22653D0044A7BA /* Build configuration list for PBXProject "calisthenicsApp" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 6AA812FB2F22653D0044A7BA;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 6AA813052F22653D0044A7BA /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				6AA813032F22653D0044A7BA /* calisthenicsApp */,
+				6AA813102F22653F0044A7BA /* calisthenicsAppTests */,
+				6AA8131A2F22653F0044A7BA /* calisthenicsAppUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		6AA813022F22653D0044A7BA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6AF3E8A92F226995003FA03A /* pose_landmarker_heavy.task in Resources */,
+				6AF3E8B22F22A848003FA03A /* pose_landmarker_full.task in Resources */,
+				6A0FC5A12F365B5A003800B3 /* pose_landmarker_lite.task in Resources */,
+				6AF3E89F2F22670F003FA03A /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6AA8130F2F22653F0044A7BA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6AA813192F22653F0044A7BA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		141ABCB0342C2D6D60A1AF7D /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-calisthenicsApp-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		559B902D2D346648B68C97AC /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-calisthenicsApp-calisthenicsAppUITests-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		7DE55FC728AAD50181EBF7F8 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-calisthenicsAppTests-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		6AA813002F22653D0044A7BA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6AF3E8AB2F228725003FA03A /* PoseDetectionManager.swift in Sources */,
+				6A28B3A02F2C0A74000E1FB1 /* MainMenuView.swift in Sources */,
+				6AF3E89D2F22670F003FA03A /* calisthenicsAppApp.swift in Sources */,
+				6AF3E8B42F22D875003FA03A /* BiometricEvaluator.swift in Sources */,
+				6AF3E89E2F22670F003FA03A /* ExerciseSessionView.swift in Sources */,
+				6AF3E8AD2F228A4C003FA03A /* CameraView.swift in Sources */,
+				6AF3E8AF2F228A63003FA03A /* LandmarkOverlay.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6AA8130D2F22653F0044A7BA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6AF3E8A22F226720003FA03A /* calisthenicsAppTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6AA813172F22653F0044A7BA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6AF3E8A62F226723003FA03A /* calisthenicsAppUITests.swift in Sources */,
+				6AF3E8A72F226723003FA03A /* calisthenicsAppUITestsLaunchTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		6AA813132F22653F0044A7BA /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6AA813032F22653D0044A7BA /* calisthenicsApp */;
+			targetProxy = 6AA813122F22653F0044A7BA /* PBXContainerItemProxy */;
+		};
+		6AA8131D2F22653F0044A7BA /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6AA813032F22653D0044A7BA /* calisthenicsApp */;
+			targetProxy = 6AA8131C2F22653F0044A7BA /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		6AA813232F22653F0044A7BA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 3ML434YKMZ;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		6AA813242F22653F0044A7BA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 3ML434YKMZ;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		6AA813262F22653F0044A7BA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = E6F6524E4FD4B0C25AA91D1E /* Pods-calisthenicsApp.debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3ML434YKMZ;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = calisthenicsApp/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses the camera to track your body movements for real-time calisthenics form correction.";
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 15.7;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nicholas.calisthenicsApp;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.nicholas.calsApp.v1;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				XROS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Debug;
+		};
+		6AA813272F22653F0044A7BA /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 6F3A4C4CCF38A9146AA53267 /* Pods-calisthenicsApp.release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3ML434YKMZ;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = calisthenicsApp/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses the camera to track your body movements for real-time calisthenics form correction.";
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 15.7;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nicholas.calisthenicsApp;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.nicholas.calsApp.v1;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				XROS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Release;
+		};
+		6AA813292F22653F0044A7BA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F975C58B307008629C658A47 /* Pods-calisthenicsAppTests.debug.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3ML434YKMZ;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MACOSX_DEPLOYMENT_TARGET = 15.7;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nicholas.calisthenicsAppTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/calisthenicsApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/calisthenicsApp";
+				XROS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Debug;
+		};
+		6AA8132A2F22653F0044A7BA /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = A5A761A7A4D0ED6147A4A02A /* Pods-calisthenicsAppTests.release.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3ML434YKMZ;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MACOSX_DEPLOYMENT_TARGET = 15.7;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nicholas.calisthenicsAppTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/calisthenicsApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/calisthenicsApp";
+				XROS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Release;
+		};
+		6AA8132C2F22653F0044A7BA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2BEB5E9D2AD06C358F7BF248 /* Pods-calisthenicsApp-calisthenicsAppUITests.debug.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3ML434YKMZ;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MACOSX_DEPLOYMENT_TARGET = 15.7;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nicholas.calisthenicsAppUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_TARGET_NAME = calisthenicsApp;
+				XROS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Debug;
+		};
+		6AA8132D2F22653F0044A7BA /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 642CC0C51E00021814853BC0 /* Pods-calisthenicsApp-calisthenicsAppUITests.release.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3ML434YKMZ;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MACOSX_DEPLOYMENT_TARGET = 15.7;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nicholas.calisthenicsAppUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_TARGET_NAME = calisthenicsApp;
+				XROS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		6AA812FF2F22653D0044A7BA /* Build configuration list for PBXProject "calisthenicsApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6AA813232F22653F0044A7BA /* Debug */,
+				6AA813242F22653F0044A7BA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6AA813252F22653F0044A7BA /* Build configuration list for PBXNativeTarget "calisthenicsApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6AA813262F22653F0044A7BA /* Debug */,
+				6AA813272F22653F0044A7BA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6AA813282F22653F0044A7BA /* Build configuration list for PBXNativeTarget "calisthenicsAppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6AA813292F22653F0044A7BA /* Debug */,
+				6AA8132A2F22653F0044A7BA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6AA8132B2F22653F0044A7BA /* Build configuration list for PBXNativeTarget "calisthenicsAppUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6AA8132C2F22653F0044A7BA /* Debug */,
+				6AA8132D2F22653F0044A7BA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 6AA812FC2F22653D0044A7BA /* Project object */;
+}

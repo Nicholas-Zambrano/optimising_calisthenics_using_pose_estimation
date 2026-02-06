@@ -1,0 +1,5 @@
+Pods/
+.xcworkspace/
+*.task
+.DS_Store
+DerivedData/

@@ -1,0 +1,81 @@
+//
+//  MainMenuView.swift
+//  calisthenicsApp
+//
+//  Created by Nicholas Zambrano on 29/01/2026.
+//
+
+
+
+import SwiftUI
+
+struct MainMenuView: View {
+    let exerciseData = [
+        ("Push-Up", "push_up", "Target: Core & Chest"),
+        ("Squat", "squat", "Target: Quads & Glutes"),
+        ("Pull-Up", "pull_up", "Target: Back & Biceps")
+    ]
+    
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading) {
+                    Text("Time to master your calisthenics")
+                        .font(.largeTitle)
+                        .bold()
+                        .foregroundColor(.white) // Dark theme look for elite athletes
+                    Text("Select your exercise")
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal)
+                
+                ForEach(exerciseData, id: \.0) { name, assetName, detail in
+                    NavigationLink(destination: ExerciseSessionView(selectedExercise: name)) {
+                        ExerciseCard(name: name, imageName: assetName, detail: detail)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
+            .padding(.top)
+        }
+        .navigationTitle("")
+        .background(Color.black.ignoresSafeArea())
+    }
+}
+
+struct ExerciseCard: View {
+    let name: String
+    let imageName: String
+    let detail: String
+    
+    var body: some View {
+        HStack(spacing: 15) {
+            Image(imageName)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: 80, height: 80)
+                .cornerRadius(12)
+                .clipped()
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(name)
+                    .font(.headline)
+                    .foregroundColor(.white)
+                Text(detail)
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+            
+            Spacer()
+            
+            Image(systemName: "chevron.right")
+                .font(.footnote)
+                .foregroundColor(.white.opacity(0.5))
+        }
+        .padding()
+        .background(Color(white: 0.12)) 
+        .cornerRadius(15)
+        .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 4)
+        .padding(.horizontal)
+    }
+}
