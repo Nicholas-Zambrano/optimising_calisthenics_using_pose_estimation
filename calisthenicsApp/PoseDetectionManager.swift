@@ -29,6 +29,11 @@ enum FeedbackSensitivity: String, CaseIterable {
     }
 }
 
+enum FeedbackFocus: String, CaseIterable {
+    case armsOnly = "Arms Only"
+    case fullBody = "Full Body"
+}
+
 enum FormIssue: String {
     case hipSagCritical
     case elbowFlareCritical
@@ -36,12 +41,16 @@ enum FormIssue: String {
     case elbowFlare
     case shallowDepth
     case tooFast
+    case asymmetryCritical
+    case asymmetry
+    case hipsNotVisible
+    case armsNotVisible
     
     var severity: IssueSeverity {
         switch self {
-        case .hipSagCritical, .elbowFlareCritical:
+        case .hipSagCritical, .elbowFlareCritical, .asymmetryCritical:
             return .critical
-        case .hipSag, .elbowFlare, .shallowDepth, .tooFast:
+        case .hipSag, .elbowFlare, .shallowDepth, .tooFast, .asymmetry, .hipsNotVisible, .armsNotVisible:
             return .important
         }
     }
@@ -56,6 +65,12 @@ enum FormIssue: String {
             return "Go deeper next rep"
         case .tooFast:
             return "Slow down the tempo"
+        case .asymmetryCritical, .asymmetry:
+            return "Press evenly through both hands"
+        case .hipsNotVisible:
+            return "Hips not visible — step back or lower camera"
+        case .armsNotVisible:
+            return "Arms not visible — move closer to camera"
         }
     }
     
@@ -96,6 +111,10 @@ struct OverlayColors {
 struct FrontViewMetrics {
     let hipDropRatio: Double
     let elbowFlareRatio: Double
+    let shoulderAsym: Double
+    let hipAsym: Double
+    let hipsVisible: Bool
+    let anklesVisible: Bool
 }
 
 class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, ObservableObject {
@@ -122,6 +141,8 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
     @Published var secondaryHint: String = ""
     @Published var sensitivity: FeedbackSensitivity = .normal
     @Published var lastRepScore: Int = 0
+    @Published var isPortraitMode: Bool = true
+    @Published var feedbackFocus: FeedbackFocus = .armsOnly
     
     private var pushUpState: String = "UP"
     private var currentRepHasError = false
@@ -156,6 +177,10 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
     private var repMaxElbowFlare: Double = 0
     private var repMaxHipDropRatio: Double = 0
     private var repMaxElbowFlareRatio: Double = 0
+    private var repMaxShoulderAsym: Double = 0
+    private var repMaxHipAsym: Double = 0
+    private var repMaxElbowAngleDiff: Double = 0
+    private var repHipsVisible: Bool = true
     private var repStartMS: Int?
     private var repEndMS: Int?
     private var repScores: [Int] = []
@@ -294,6 +319,10 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
         repMaxElbowFlare = 0
         repMaxHipDropRatio = 0
         repMaxElbowFlareRatio = 0
+        repMaxShoulderAsym = 0
+        repMaxHipAsym = 0
+        repMaxElbowAngleDiff = 0
+        repHipsVisible = true
         repStartMS = nil
         repEndMS = nil
         criticalStreak = 0
@@ -302,7 +331,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
         lockoutHoldStartMS = nil
     }
 
-    private func updateRepMetrics(metrics: PushUpMetrics, frontMetrics: FrontViewMetrics?) {
+    private func updateRepMetrics(metrics: PushUpMetrics, frontMetrics: FrontViewMetrics?, elbowAngleDiff: Double?) {
         repMinElbowAngle = min(repMinElbowAngle, metrics.elbowFlexion)
         repMaxElbowAngle = max(repMaxElbowAngle, metrics.elbowFlexion)
         repMinBackAngle = min(repMinBackAngle, metrics.backAngle)
@@ -310,6 +339,12 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
         if let front = frontMetrics {
             repMaxHipDropRatio = max(repMaxHipDropRatio, front.hipDropRatio)
             repMaxElbowFlareRatio = max(repMaxElbowFlareRatio, front.elbowFlareRatio)
+            repMaxShoulderAsym = max(repMaxShoulderAsym, front.shoulderAsym)
+            repMaxHipAsym = max(repMaxHipAsym, front.hipAsym)
+            if !front.hipsVisible { repHipsVisible = false }
+        }
+        if let diff = elbowAngleDiff {
+            repMaxElbowAngleDiff = max(repMaxElbowAngleDiff, diff)
         }
     }
 
@@ -334,12 +369,22 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
         let hipExcess = max(0.0, (repMaxHipDropRatio - hipBase) / max(0.001, hipBase))
         let flareExcess = max(0.0, (repMaxElbowFlareRatio - flareBase) / max(0.001, flareBase))
         let depthDeficit = max(0.0, (repMinElbowAngle - depthBase) / max(1.0, maxDepth - depthBase))
+        let asymExcess = max(
+            max(repMaxShoulderAsym - 0.08, repMaxHipAsym - 0.08),
+            max(0.0, (repMaxElbowAngleDiff - 15.0) / 25.0)
+        )
 
         let hipPenalty = min(40.0, hipExcess * 60.0)
         let flarePenalty = min(30.0, flareExcess * 50.0)
         let depthPenalty = min(30.0, depthDeficit * 60.0)
+        let asymPenalty = min(25.0, asymExcess * 60.0)
 
-        let score = 100.0 - hipPenalty - flarePenalty - depthPenalty
+        let score: Double
+        if feedbackFocus == .armsOnly {
+            score = 100.0 - flarePenalty - asymPenalty
+        } else {
+            score = 100.0 - hipPenalty - flarePenalty - depthPenalty - asymPenalty
+        }
         return max(0, min(100, Int(score.rounded())))
     }
 
@@ -435,10 +480,14 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
                     colors.rightArm = .green
                 }
                 
-                if front.hipDropRatio > hipRed {
-                    colors.torso = .red
-                } else if front.hipDropRatio > hipYellow {
-                    colors.torso = .yellow
+                if !isPortraitMode {
+                    if front.hipDropRatio > hipRed {
+                        colors.torso = .red
+                    } else if front.hipDropRatio > hipYellow {
+                        colors.torso = .yellow
+                    } else {
+                        colors.torso = .green
+                    }
                 } else {
                     colors.torso = .green
                 }
@@ -476,15 +525,35 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
             let flareYellow = flareBase * sensitivity.yellowMultiplier
             let flareRed = flareBase * sensitivity.redMultiplier
             
-            if repMaxHipDropRatio > hipRed { issues.append(.hipSagCritical) }
-            else if repMaxHipDropRatio > hipYellow { issues.append(.hipSag) }
+            if feedbackFocus == .fullBody && !isPortraitMode {
+                if !repHipsVisible {
+                    issues.append(.hipsNotVisible)
+                } else {
+                    if repMaxHipDropRatio > hipRed { issues.append(.hipSagCritical) }
+                    else if repMaxHipDropRatio > hipYellow { issues.append(.hipSag) }
+                }
+            }
             
             if repMaxElbowFlareRatio > flareRed { issues.append(.elbowFlareCritical) }
             else if repMaxElbowFlareRatio > flareYellow { issues.append(.elbowFlare) }
+
+            if feedbackFocus == .fullBody {
+                let shoulderYellow = 0.08
+                let shoulderRed = 0.12
+                let elbowDiffYellow = 15.0
+                let elbowDiffRed = 25.0
+                if repMaxShoulderAsym > shoulderRed || (!isPortraitMode && repMaxHipAsym > shoulderRed) || repMaxElbowAngleDiff > elbowDiffRed {
+                    issues.append(.asymmetryCritical)
+                } else if repMaxShoulderAsym > shoulderYellow || (!isPortraitMode && repMaxHipAsym > shoulderYellow) || repMaxElbowAngleDiff > elbowDiffYellow {
+                    issues.append(.asymmetry)
+                }
+            }
         }
         
-        if repMinElbowAngle > depthThreshold { issues.append(.shallowDepth) }
-        if durationSec < 0.6 { issues.append(.tooFast) }
+        if feedbackFocus == .fullBody {
+            if repMinElbowAngle > depthThreshold { issues.append(.shallowDepth) }
+            if durationSec < 0.6 { issues.append(.tooFast) }
+        }
         
         let repScore = (postureMode == .front) ? scoreFrontViewRep() : Self.scoreForIssues(issues)
         repScores.append(repScore)
@@ -731,11 +800,43 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
                         visibility: nil,
                         presence: nil
                     )
+                    let leftHipVis = leftHip.visibility?.floatValue ?? 0
+                    let rightHipVis = rightHip.visibility?.floatValue ?? 0
+                    let leftAnkle = landmarks[27]
+                    let rightAnkle = landmarks[28]
+                    let leftAnkleVis = leftAnkle.visibility?.floatValue ?? 0
+                    let rightAnkleVis = rightAnkle.visibility?.floatValue ?? 0
+                    let anklesVisible = min(leftAnkleVis, rightAnkleVis) >= 0.4
+                    let hipsVisible = min(leftHipVis, rightHipVis) >= 0.5 && anklesVisible
+                    let leftWristVis = landmarks[15].visibility?.floatValue ?? 0
+                    let rightWristVis = landmarks[16].visibility?.floatValue ?? 0
+                    let leftElbowVis = landmarks[13].visibility?.floatValue ?? 0
+                    let rightElbowVis = landmarks[14].visibility?.floatValue ?? 0
+                    let armsVisible = min(leftWristVis, rightWristVis, leftElbowVis, rightElbowVis) >= 0.5
+                    
                     let shoulderWidth = max(0.001, abs(Double(leftShoulder.x - rightShoulder.x)))
                     let torsoLength = max(0.001, sqrt(pow(Double(shoulderMid.x - hipMid.x), 2) + pow(Double(shoulderMid.y - hipMid.y), 2)))
                     let hipDropRatio = max(0.0, (Double(hipMid.y - shoulderMid.y)) / torsoLength)
                     let elbowFlareRatio = min(1.0, abs(Double(wrist.x - shoulder.x)) / shoulderWidth)
-                    let frontMetrics = FrontViewMetrics(hipDropRatio: hipDropRatio, elbowFlareRatio: elbowFlareRatio)
+                    let shoulderAsym = abs(Double(leftShoulder.y - rightShoulder.y)) / torsoLength
+                    let hipAsym = abs(Double(leftHip.y - rightHip.y)) / torsoLength
+                    let frontMetrics = FrontViewMetrics(
+                        hipDropRatio: hipDropRatio,
+                        elbowFlareRatio: elbowFlareRatio,
+                        shoulderAsym: shoulderAsym,
+                        hipAsym: hipAsym,
+                        hipsVisible: hipsVisible,
+                        anklesVisible: anklesVisible
+                    )
+                    if enablePoseDebugLogs {
+                        if !armsVisible {
+                            self.debugText = "Arms not visible — move closer"
+                        }
+                    }
+                    
+                    let leftElbowAngle = self.evaluator.calculateAngle(p1: leftShoulder, p2: landmarks[13], p3: landmarks[15])
+                    let rightElbowAngle = self.evaluator.calculateAngle(p1: rightShoulder, p2: landmarks[14], p3: landmarks[16])
+                    let elbowAngleDiff = abs(leftElbowAngle - rightElbowAngle)
                     
                     let evaluation = self.evaluator.evaluatePushUp(
                         shoulder: shoulder,
@@ -748,7 +849,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
                     )
                     rawRisk = evaluation.0
                     displayMessage = evaluation.1
-                    updateRepMetrics(metrics: metrics, frontMetrics: frontMetrics)
+                    updateRepMetrics(metrics: metrics, frontMetrics: frontMetrics, elbowAngleDiff: elbowAngleDiff)
                     self.handlePushUpRep(elbowAngleRaw: metrics.elbowFlexion, timestampMS: timestampInMilliseconds, postureMode: effectivePostureMode, currentRisk: rawRisk)
                     self.overlayColors = self.colorsFor(metrics: metrics, frontMetrics: frontMetrics, postureMode: effectivePostureMode)
                     
@@ -777,13 +878,19 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
                         let hipBase = self.calibrationHipDrop ?? 0.0
                         let flareBase = self.calibrationElbowFlareRatio ?? 0.0
                         self.debugText = String(
-                            format: "mode=%@ elbow=%.1f hip=%.2f(%.2f) flare=%.2f(%.2f) depth=%.2f score=%d last=%d",
+                            format: "mode=%@ view=%@ elbow=%.1f hip=%.2f(%.2f) flare=%.2f(%.2f) asymS=%.2f asymH=%.2f diff=%.1f hipVis=%@ ankleVis=%@ depth=%.2f score=%d last=%d",
                             "\(effectivePostureMode)",
+                            self.isPortraitMode ? "portrait" : "landscape",
                             metrics.elbowFlexion,
                             frontMetrics.hipDropRatio,
                             hipBase,
                             frontMetrics.elbowFlareRatio,
                             flareBase,
+                            frontMetrics.shoulderAsym,
+                            frontMetrics.hipAsym,
+                            elbowAngleDiff,
+                            frontMetrics.hipsVisible ? "Y" : "N",
+                            frontMetrics.anklesVisible ? "Y" : "N",
                             self.depthProgress,
                             self.overallScore,
                             self.lastRepScore
@@ -820,9 +927,18 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
     
     func toggleCamera() {
         cameraPosition = (cameraPosition == .back) ? .front : .back
+        isDetectionPaused = true
+        latestLandmarks = nil
+        resetRepMetrics()
+        calibrationMinElbow = nil
+        calibrationMaxElbow = nil
+        calibrationHipDrop = nil
+        calibrationElbowFlareRatio = nil
+        calibrationRepCount = 0
         DispatchQueue.global(qos: .userInitiated).async {
             self.session.stopRunning()
             self.startCamera()
+            self.isDetectionPaused = false
         }
     }
 

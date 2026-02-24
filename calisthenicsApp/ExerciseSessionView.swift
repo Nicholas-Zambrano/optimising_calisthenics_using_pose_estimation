@@ -12,13 +12,15 @@ struct ExerciseSessionView: View {
     let selectedExercise: String
     let targetReps: Int
     let sensitivity: FeedbackSensitivity
+    let focus: FeedbackFocus
     @StateObject private var poseManager = PoseDetectionManager()
     @State private var countdown = 10
     @State private var isCountingDown = true
 
     var body: some View {
-        ZStack {
-            CameraView(session: poseManager.session).ignoresSafeArea()
+        GeometryReader { geo in
+            ZStack {
+                CameraView(session: poseManager.session).ignoresSafeArea()
             
             if !isCountingDown, !poseManager.isSessionComplete, let currentLandmarks = poseManager.latestLandmarks {
                 LandmarkOverlayView(
@@ -180,9 +182,16 @@ struct ExerciseSessionView: View {
                     Text("\(countdown)").font(.system(size: 120, weight: .black)).foregroundColor(.white)
                 }
             }
+            }
+            .navigationBarBackButtonHidden(true)
+            .onAppear {
+                poseManager.isPortraitMode = geo.size.height >= geo.size.width
+                startSequence()
+            }
+            .onChange(of: geo.size) { newSize in
+                poseManager.isPortraitMode = newSize.height >= newSize.width
+            }
         }
-        .navigationBarBackButtonHidden(true)
-        .onAppear { startSequence() }
     }
 
     private var scoreColor: Color {
@@ -218,6 +227,7 @@ struct ExerciseSessionView: View {
         poseManager.activeExercise = selectedExercise
         poseManager.isCoachingActive = false
         poseManager.resetForNewSession(targetReps: targetReps, sensitivity: sensitivity)
+        poseManager.feedbackFocus = focus
         poseManager.checkPermissionAndStart()
         
         Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in

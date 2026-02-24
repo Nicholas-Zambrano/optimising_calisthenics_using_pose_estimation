@@ -21,6 +21,7 @@ struct MainMenuView: View {
     @State private var selectedExercise: String = ""
     @State private var selectedReps: Int = 10
     @State private var selectedSensitivity: FeedbackSensitivity = .normal
+    @State private var selectedFocus: FeedbackFocus = .armsOnly
     
     var body: some View {
         ScrollView {
@@ -40,6 +41,7 @@ struct MainMenuView: View {
                         selectedExercise = name
                         selectedReps = 10
                         selectedSensitivity = .normal
+                        selectedFocus = .armsOnly
                         showRepPicker = true
                     } label: {
                         ExerciseCard(name: name, imageName: assetName, detail: detail)
@@ -59,7 +61,8 @@ struct MainMenuView: View {
                 destination: ExerciseSessionView(
                     selectedExercise: selectedExercise,
                     targetReps: selectedReps,
-                    sensitivity: selectedSensitivity
+                    sensitivity: selectedSensitivity,
+                    focus: selectedFocus
                 ),
                 isActive: $navigateToSession
             ) { EmptyView() }
@@ -85,6 +88,14 @@ struct MainMenuView: View {
             Picker("Sensitivity", selection: $selectedSensitivity) {
                 ForEach(FeedbackSensitivity.allCases, id: \.self) { level in
                     Text(level.rawValue).tag(level)
+                }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal)
+            
+            Picker("Focus", selection: $selectedFocus) {
+                ForEach(FeedbackFocus.allCases, id: \.self) { mode in
+                    Text(mode.rawValue).tag(mode)
                 }
             }
             .pickerStyle(.segmented)

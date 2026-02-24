@@ -94,6 +94,11 @@ struct InstructionOverlayView: View {
                 if primary.contains("Go deeper") || secondary.contains("Go deeper") {
                     drawArrow(context: &context, from: shoulderMid, to: CGPoint(x: shoulderMid.x, y: shoulderMid.y + 50), color: .orange)
                 }
+                
+                if primary.contains("Even out your weight") || secondary.contains("Even out your weight") {
+                    drawArrow(context: &context, from: hipL, to: hipMid, color: .blue)
+                    drawArrow(context: &context, from: hipR, to: hipMid, color: .blue)
+                }
             }
         }
     }
