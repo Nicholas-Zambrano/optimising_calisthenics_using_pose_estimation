@@ -58,6 +58,7 @@ final class ExerciseEngine {
     private var lastFeedbackUpdateMS: Int64 = 0
     private var pendingFeedbackMessage: String = ""
     private var pendingFeedbackStartMS: Int64 = 0
+    private var liveFeedbackLocked: Bool = false
     private var repArmsVisible: Bool = true
     private var debugEnabled: Bool = false
     private var lastMetricsTimestampMS: Int?
@@ -605,6 +606,7 @@ final class ExerciseEngine {
                         pushUpState = "DOWN"
                         aboveLockoutStartMS = nil
                         inRep = true
+                        liveFeedbackLocked = false
                         resetRepMetrics()
                         repStartMS = timestampMS
                     }
@@ -619,6 +621,7 @@ final class ExerciseEngine {
                     pushUpState = "UP"
                     repCount += 1
                     inRep = false
+                    liveFeedbackLocked = false
                     finalizeRep(postureMode: postureMode, timestampMS: timestampMS)
                     belowDepthStartMS = nil
                 }
@@ -732,6 +735,7 @@ final class ExerciseEngine {
     
     private func finalizeRep(postureMode: PushUpPostureMode, timestampMS: Int) {
         repEndMS = timestampMS
+        liveFeedbackLocked = false
         let durationMS = (repStartMS != nil && repEndMS != nil) ? max(1, (repEndMS! - repStartMS!)) : 1
         let durationSec = Double(durationMS) / 1000.0
 
@@ -956,7 +960,10 @@ final class ExerciseEngine {
         if matched.isEmpty {
             if inRep {
                 let hint = depthProgress < 0.7 ? "Lower down for full depth" : "Hold steady"
-                updateFeedback(message: hint, secondary: "", risk: .low)
+                if !liveFeedbackLocked && shouldUpdateLiveFeedback(message: hint) {
+                    updateFeedback(message: hint, secondary: "", risk: .low)
+                    liveFeedbackLocked = true
+                }
             }
             return
         }
@@ -964,8 +971,14 @@ final class ExerciseEngine {
         let message = messageForRules(matched)
         let secondary = secondaryMessageForRules(matched)
         if let primary = matched.sorted(by: { severityRank($0.severity) > severityRank($1.severity) }).first {
+            if inRep && primary.severity != .critical {
+                if liveFeedbackLocked { return }
+            }
             if shouldUpdateLiveFeedback(message: message) {
                 updateFeedback(message: message, secondary: secondary, risk: riskLevel(for: primary.severity))
+                if inRep && primary.severity != .critical {
+                    liveFeedbackLocked = true
+                }
             }
         }
     }

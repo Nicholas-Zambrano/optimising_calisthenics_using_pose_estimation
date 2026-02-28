@@ -267,6 +267,7 @@ struct ExerciseSessionView: View {
         poseManager.isCoachingActive = false
         poseManager.resetForNewSession(targetReps: targetReps, sensitivity: sensitivity)
         poseManager.feedbackFocus = focus
+        poseManager.isDetectionPaused = true
         poseManager.checkPermissionAndStart()
         
         Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
@@ -276,6 +277,7 @@ struct ExerciseSessionView: View {
                 } else {
                     timer.invalidate()
                     isCountingDown = false
+                    poseManager.isDetectionPaused = false
                     poseManager.isCoachingActive = true
                     poseManager.speakFeedback("Starting \(selectedExercise) analysis")
                 }
