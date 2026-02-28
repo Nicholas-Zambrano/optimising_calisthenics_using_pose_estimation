@@ -91,19 +91,28 @@
     {
       "id": "back_angle_critical",
       "severity": "critical",
-      "message": "Keep back straight",
+      "message": "Straighten your back",
       "metric": "backAngle",
       "op": "lt",
       "threshold": 155,
       "appliesIn": ["side"]
     },
     {
+      "id": "back_angle_warning",
+      "severity": "important",
+      "message": "Keep back straighter",
+      "metric": "backAngle",
+      "op": "lt",
+      "threshold": 165,
+      "appliesIn": ["side"]
+    },
+    {
       "id": "elbow_flare_side",
       "severity": "important",
-      "message": "Tuck elbows in",
+      "message": "Tuck elbows closer to ribs",
       "metric": "elbowFlare",
       "op": "gt",
-      "threshold": 65,
+      "threshold": 45,
       "appliesIn": ["side"]
     },
     {
@@ -141,6 +150,15 @@
       "op": "lt",
       "threshold": 0.6,
       "appliesIn": ["front", "side", "fullBody"]
+    },
+    {
+      "id": "shallow_depth_side",
+      "severity": "important",
+      "message": "Go deeper",
+      "metric": "depthProgress",
+      "op": "lt",
+      "threshold": 0.7,
+      "appliesIn": ["side", "fullBody"]
     },
     {
       "id": "tempo_fast",

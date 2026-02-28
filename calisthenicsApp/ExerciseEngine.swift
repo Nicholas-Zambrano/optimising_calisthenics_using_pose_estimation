@@ -56,6 +56,8 @@ final class ExerciseEngine {
     private var lastRepTooFast: Bool = false
     private var lastFeedbackMessage: String = ""
     private var lastFeedbackUpdateMS: Int64 = 0
+    private var pendingFeedbackMessage: String = ""
+    private var pendingFeedbackStartMS: Int64 = 0
     private var repArmsVisible: Bool = true
     private var debugEnabled: Bool = false
     private var lastMetricsTimestampMS: Int?
@@ -788,7 +790,8 @@ final class ExerciseEngine {
             (matchedRules.contains(where: { $0.severity == RuleSeverity.important }) ? .medium : .low)
         updateFeedback(message: message, secondary: secondary, risk: repRisk, force: true)
 
-        repCompletedMessage = "Rep \(repCount). \(message)"
+        let audioMessage = messageForAudio(matchedRules)
+        repCompletedMessage = "Rep \(repCount). \(audioMessage)"
 
         if repCount >= targetReps {
             isSessionComplete = true
@@ -854,6 +857,21 @@ final class ExerciseEngine {
         return "\(label(for: primary.severity)): \(primary.message)"
     }
 
+    private func messageForAudio(_ rules: [FeedbackRule]) -> String {
+        guard !rules.isEmpty else { return "GOOD: Form is clean" }
+        let sorted = rules.sorted { severityRank($0.severity) > severityRank($1.severity) }
+        if let critical = sorted.first(where: { $0.severity == .critical }) {
+            return "\(label(for: critical.severity)): \(critical.message)"
+        }
+        if let important = sorted.first(where: { $0.severity == .important }) {
+            return "\(label(for: important.severity)): \(important.message)"
+        }
+        if let minor = sorted.first(where: { $0.severity == .minor }) {
+            return "\(label(for: minor.severity)): \(minor.message)"
+        }
+        return "GOOD: Form is clean"
+    }
+
     private func secondaryMessageForRules(_ rules: [FeedbackRule]) -> String {
         if rules.count > 1 {
             let sorted = rules.sorted { severityRank($0.severity) > severityRank($1.severity) }
@@ -889,6 +907,26 @@ final class ExerciseEngine {
         currentRisk = risk
         lastFeedbackMessage = message
         lastFeedbackUpdateMS = now
+    }
+
+    private func shouldUpdateLiveFeedback(message: String) -> Bool {
+        let now = Int64(lastTimestampMS ?? 0)
+        if message == lastFeedbackMessage {
+            pendingFeedbackMessage = ""
+            pendingFeedbackStartMS = 0
+            return true
+        }
+        if message == pendingFeedbackMessage {
+            if (now - pendingFeedbackStartMS) >= 450 {
+                pendingFeedbackMessage = ""
+                pendingFeedbackStartMS = 0
+                return true
+            }
+            return false
+        }
+        pendingFeedbackMessage = message
+        pendingFeedbackStartMS = now
+        return false
     }
     
 
@@ -926,7 +964,9 @@ final class ExerciseEngine {
         let message = messageForRules(matched)
         let secondary = secondaryMessageForRules(matched)
         if let primary = matched.sorted(by: { severityRank($0.severity) > severityRank($1.severity) }).first {
-            updateFeedback(message: message, secondary: secondary, risk: riskLevel(for: primary.severity))
+            if shouldUpdateLiveFeedback(message: message) {
+                updateFeedback(message: message, secondary: secondary, risk: riskLevel(for: primary.severity))
+            }
         }
     }
 
