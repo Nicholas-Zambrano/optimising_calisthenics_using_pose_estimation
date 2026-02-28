@@ -27,6 +27,7 @@ struct CameraView: UIViewRepresentable {
 
     func updateUIView(_ uiView: UIView, context: Context) {
         guard let previewLayer = uiView.layer.sublayers?.first as? AVCaptureVideoPreviewLayer else { return }
+        previewLayer.frame = uiView.bounds
         if let connection = previewLayer.connection, connection.isVideoMirroringSupported {
             connection.automaticallyAdjustsVideoMirroring = false
             connection.isVideoMirrored = isMirrored

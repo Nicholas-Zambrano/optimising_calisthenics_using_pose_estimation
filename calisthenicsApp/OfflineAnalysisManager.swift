@@ -13,7 +13,7 @@ final class OfflineAnalysisManager: ObservableObject {
     @Published var bestSnapshot: UIImage?
     @Published var worstSnapshot: UIImage?
     @Published var logLines: [String] = []
-    @Published var mirrorOverlay: Bool = true
+    @Published var mirrorOverlay: Bool = false
     
     private var isCancelled = false
     private var bestScore: Int = -1
@@ -48,6 +48,8 @@ final class OfflineAnalysisManager: ObservableObject {
             let durationSec = CMTimeGetSeconds(asset.duration)
             let naturalSize = track.naturalSize
             let isPortrait = naturalSize.height >= naturalSize.width
+            let preferredTransform = track.preferredTransform
+            let shouldMirror = self.isMirrored(preferredTransform)
             
             let reader: AVAssetReader
             do {
@@ -92,6 +94,7 @@ final class OfflineAnalysisManager: ObservableObject {
             processor.feedbackFocus = settings.focus
             processor.isCoachingActive = false
             processor.resetForNewSession(targetReps: settings.targetReps, sensitivity: settings.sensitivity)
+            self.mirrorOverlay = shouldMirror
             
             if !reader.startReading() {
                 DispatchQueue.main.async {
@@ -203,6 +206,8 @@ final class OfflineAnalysisManager: ObservableObject {
             let naturalSize = track.naturalSize
             let width = Int(naturalSize.width)
             let height = Int(naturalSize.height)
+            let preferredTransform = track.preferredTransform
+            let shouldMirror = self.isMirrored(preferredTransform)
             
             let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("annotated_\(UUID().uuidString).mp4")
             if FileManager.default.fileExists(atPath: tempURL.path) {
@@ -264,6 +269,7 @@ final class OfflineAnalysisManager: ObservableObject {
             processor.feedbackFocus = settings.focus
             processor.isCoachingActive = false
             processor.resetForNewSession(targetReps: settings.targetReps, sensitivity: settings.sensitivity)
+            self.mirrorOverlay = shouldMirror
             
             if !reader.startReading() {
                 DispatchQueue.main.async {
@@ -309,6 +315,11 @@ final class OfflineAnalysisManager: ObservableObject {
                 }
             }
         }
+    }
+
+    private func isMirrored(_ transform: CGAffineTransform) -> Bool {
+        let det = transform.a * transform.d - transform.b * transform.c
+        return det < 0
     }
     
     private func renderAnnotatedFrame(pixelBuffer: CVPixelBuffer, landmarks: [NormalizedLandmark]) -> UIImage? {

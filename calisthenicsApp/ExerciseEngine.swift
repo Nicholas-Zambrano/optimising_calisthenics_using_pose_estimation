@@ -58,6 +58,16 @@ final class ExerciseEngine {
     private var lastFeedbackUpdateMS: Int64 = 0
     private var repArmsVisible: Bool = true
     private var debugEnabled: Bool = false
+    private var lastMetricsTimestampMS: Int?
+    private var smoothedElbowFlexion: Double?
+    private var smoothedBackAngle: Double?
+    private var smoothedElbowFlare: Double?
+    private var smoothedElbowFlareRatio: Double?
+    private var smoothedShoulderAsym: Double?
+    private var smoothedHipDropRatio: Double?
+    private var smoothedHipRiseRatio: Double?
+    private var smoothedHipAsym: Double?
+    private var smoothedElbowAngleDiff: Double?
     private var fsmCurrentState: String?
     private var fsmPrevState: String?
     private var fsmRepStartMS: Int?
@@ -130,6 +140,16 @@ final class ExerciseEngine {
         calibrationElbowAngleDiff = nil
         calibrationDepthProgress = nil
         calibrationRepCount = 0
+        lastMetricsTimestampMS = nil
+        smoothedElbowFlexion = nil
+        smoothedBackAngle = nil
+        smoothedElbowFlare = nil
+        smoothedElbowFlareRatio = nil
+        smoothedShoulderAsym = nil
+        smoothedHipDropRatio = nil
+        smoothedHipRiseRatio = nil
+        smoothedHipAsym = nil
+        smoothedElbowAngleDiff = nil
         fsmCurrentState = nil
         fsmPrevState = nil
         fsmRepStartMS = nil
@@ -156,6 +176,13 @@ final class ExerciseEngine {
         self.feedbackFocus = feedbackFocus
         self.debugEnabled = enableDebug
         let ruleMode: PushUpPostureMode = (feedbackFocus == .armsOnly ? .front : postureMode)
+
+        let (smoothedMetrics, smoothedFront, smoothedElbowDiff) = smoothPushUpMetrics(
+            metrics: metrics,
+            frontMetrics: frontMetrics,
+            elbowAngleDiff: elbowAngleDiff,
+            timestampMS: timestampMS
+        )
         
         var speakMessage: String?
 
@@ -183,17 +210,17 @@ final class ExerciseEngine {
             )
         }
         
-        updateRepMetrics(metrics: metrics, frontMetrics: frontMetrics, elbowAngleDiff: elbowAngleDiff)
+        updateRepMetrics(metrics: smoothedMetrics, frontMetrics: smoothedFront, elbowAngleDiff: smoothedElbowDiff)
         handlePushUpRep(elbowAngleRaw: metrics.elbowFlexion, timestampMS: timestampMS, postureMode: postureMode)
         
-        overlayColors = colorsFor(metrics: metrics, frontMetrics: frontMetrics, postureMode: postureMode)
+        overlayColors = colorsFor(metrics: smoothedMetrics, frontMetrics: smoothedFront, postureMode: postureMode)
         
         if let minElbow = calibrationMinElbow, let maxElbow = calibrationMaxElbow {
-            depthProgress = depthProgressFor(currentAngle: metrics.elbowFlexion, minAngle: minElbow, maxAngle: maxElbow)
+            depthProgress = depthProgressFor(currentAngle: smoothedMetrics.elbowFlexion, minAngle: minElbow, maxAngle: maxElbow)
         } else {
             let minElbow = (postureMode == .front) ? pushUpConfig.depthFrontThreshold : pushUpConfig.depthSideThreshold
             let maxElbow = (postureMode == .front) ? pushUpConfig.lockoutFrontThreshold : pushUpConfig.lockoutSideThreshold
-            depthProgress = depthProgressFor(currentAngle: metrics.elbowFlexion, minAngle: minElbow, maxAngle: maxElbow)
+            depthProgress = depthProgressFor(currentAngle: smoothedMetrics.elbowFlexion, minAngle: minElbow, maxAngle: maxElbow)
         }
         
         if enableDebug {
@@ -203,16 +230,16 @@ final class ExerciseEngine {
                 format: "mode=%@ view=%@ elbow=%.1f hip=%.2f(%.2f) flare=%.2f(%.2f) asymS=%.2f asymH=%.2f diff=%.1f hipVis=%@ ankleVis=%@ depth=%.2f score=%d last=%d calib=%d/%d",
                 "\(postureMode)",
                 isPortraitMode ? "portrait" : "landscape",
-                metrics.elbowFlexion,
-                frontMetrics.hipDropRatio,
+                smoothedMetrics.elbowFlexion,
+                smoothedFront.hipDropRatio,
                 hipBase,
-                frontMetrics.elbowFlareRatio,
+                smoothedFront.elbowFlareRatio,
                 flareBase,
-                frontMetrics.shoulderAsym,
-                frontMetrics.hipAsym,
-                elbowAngleDiff,
-                frontMetrics.hipsVisible ? "Y" : "N",
-                frontMetrics.anklesVisible ? "Y" : "N",
+                smoothedFront.shoulderAsym,
+                smoothedFront.hipAsym,
+                smoothedElbowDiff,
+                smoothedFront.hipsVisible ? "Y" : "N",
+                smoothedFront.anklesVisible ? "Y" : "N",
                 depthProgress,
                 overallScore,
                 lastRepScore,
@@ -226,8 +253,8 @@ final class ExerciseEngine {
             repCompletedMessage = nil
         } else {
             applyRuleBasedFeedback(
-                frontMetrics: frontMetrics,
-                elbowAngleDiff: elbowAngleDiff,
+                frontMetrics: smoothedFront,
+                elbowAngleDiff: smoothedElbowDiff,
                 postureMode: ruleMode
             )
         }
@@ -462,6 +489,51 @@ final class ExerciseEngine {
         guard let previous = previous else { return value }
         let alpha = 1.0 - exp(-dtSeconds / tau)
         return (alpha * value) + ((1.0 - alpha) * previous)
+    }
+
+    private func smoothPushUpMetrics(metrics: PushUpMetrics,
+                                     frontMetrics: FrontViewMetrics,
+                                     elbowAngleDiff: Double,
+                                     timestampMS: Int) -> (PushUpMetrics, FrontViewMetrics, Double) {
+        let dtSeconds: Double
+        if let last = lastMetricsTimestampMS {
+            dtSeconds = max(0.001, Double(timestampMS - last) / 1000.0)
+        } else {
+            dtSeconds = 0.033
+        }
+        lastMetricsTimestampMS = timestampMS
+
+        let tauFast = 0.10
+        let tauSlow = 0.18
+
+        smoothedElbowFlexion = emaFilter(previous: smoothedElbowFlexion, value: metrics.elbowFlexion, dtSeconds: dtSeconds, tau: tauFast)
+        smoothedBackAngle = emaFilter(previous: smoothedBackAngle, value: metrics.backAngle, dtSeconds: dtSeconds, tau: tauFast)
+        smoothedElbowFlare = emaFilter(previous: smoothedElbowFlare, value: metrics.elbowFlare, dtSeconds: dtSeconds, tau: tauFast)
+        smoothedElbowFlareRatio = emaFilter(previous: smoothedElbowFlareRatio, value: frontMetrics.elbowFlareRatio, dtSeconds: dtSeconds, tau: tauSlow)
+        smoothedShoulderAsym = emaFilter(previous: smoothedShoulderAsym, value: frontMetrics.shoulderAsym, dtSeconds: dtSeconds, tau: tauSlow)
+        smoothedHipDropRatio = emaFilter(previous: smoothedHipDropRatio, value: frontMetrics.hipDropRatio, dtSeconds: dtSeconds, tau: tauSlow)
+        smoothedHipRiseRatio = emaFilter(previous: smoothedHipRiseRatio, value: frontMetrics.hipRiseRatio, dtSeconds: dtSeconds, tau: tauSlow)
+        smoothedHipAsym = emaFilter(previous: smoothedHipAsym, value: frontMetrics.hipAsym, dtSeconds: dtSeconds, tau: tauSlow)
+        smoothedElbowAngleDiff = emaFilter(previous: smoothedElbowAngleDiff, value: elbowAngleDiff, dtSeconds: dtSeconds, tau: tauSlow)
+
+        let smoothedMetrics = PushUpMetrics(
+            backAngle: smoothedBackAngle ?? metrics.backAngle,
+            elbowFlexion: smoothedElbowFlexion ?? metrics.elbowFlexion,
+            elbowFlare: smoothedElbowFlare ?? metrics.elbowFlare
+        )
+
+        let smoothedFront = FrontViewMetrics(
+            hipDropRatio: smoothedHipDropRatio ?? frontMetrics.hipDropRatio,
+            hipRiseRatio: smoothedHipRiseRatio ?? frontMetrics.hipRiseRatio,
+            elbowFlareRatio: smoothedElbowFlareRatio ?? frontMetrics.elbowFlareRatio,
+            shoulderAsym: smoothedShoulderAsym ?? frontMetrics.shoulderAsym,
+            hipAsym: smoothedHipAsym ?? frontMetrics.hipAsym,
+            hipsVisible: frontMetrics.hipsVisible,
+            anklesVisible: frontMetrics.anklesVisible,
+            armsVisible: frontMetrics.armsVisible
+        )
+
+        return (smoothedMetrics, smoothedFront, smoothedElbowAngleDiff ?? elbowAngleDiff)
     }
     
     private func updateRepMetrics(metrics: PushUpMetrics, frontMetrics: FrontViewMetrics, elbowAngleDiff: Double) {

@@ -8,6 +8,7 @@
 
 
 import SwiftUI
+import AVFoundation
 
 struct MainMenuView: View {
     @EnvironmentObject private var settings: AppSettings
@@ -23,6 +24,7 @@ struct MainMenuView: View {
     @State private var selectedReps: Int = 10
     @State private var selectedSensitivity: FeedbackSensitivity = .normal
     @State private var selectedFocus: FeedbackFocus = .armsOnly
+    @State private var useFrontCamera: Bool = false
     
     var body: some View {
         let palette = Theme.palette(choice: settings.themeChoice, darkMode: settings.darkMode)
@@ -71,7 +73,8 @@ struct MainMenuView: View {
                     targetReps: selectedReps,
                     sensitivity: selectedSensitivity,
                     focus: selectedFocus,
-                    audioEnabled: settings.audioEnabled
+                    audioEnabled: settings.audioEnabled,
+                    useFrontCamera: useFrontCamera
                 ),
                 isActive: $navigateToSession
             ) { EmptyView() }
@@ -107,6 +110,13 @@ struct MainMenuView: View {
                 ForEach(FeedbackFocus.allCases, id: \.self) { mode in
                     Text(mode.rawValue).tag(mode)
                 }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal)
+
+            Picker("Camera", selection: $useFrontCamera) {
+                Text("Back").tag(false)
+                Text("Front").tag(true)
             }
             .pickerStyle(.segmented)
             .padding(.horizontal)

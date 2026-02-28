@@ -5,6 +5,7 @@ struct AnalyzeView: View {
     @State private var showOffline = false
     @State private var showExercisePicker = false
     @State private var selectedExercise: String = "Push-Up"
+    @State private var useFrontCamera: Bool = false
     
     var body: some View {
         let palette = Theme.palette(choice: settings.themeChoice, darkMode: settings.darkMode)
@@ -67,13 +68,21 @@ struct AnalyzeView: View {
             }
             .pickerStyle(.segmented)
             .padding(.horizontal)
+
+            Picker("Camera", selection: $useFrontCamera) {
+                Text("Back").tag(false)
+                Text("Front").tag(true)
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal)
             
             NavigationLink(destination: ExerciseSessionView(
                 selectedExercise: selectedExercise,
                 targetReps: settings.targetReps,
                 sensitivity: settings.sensitivity,
                 focus: settings.focus,
-                audioEnabled: settings.audioEnabled
+                audioEnabled: settings.audioEnabled,
+                useFrontCamera: useFrontCamera
             )) {
                 Text("Start")
                     .font(.headline)

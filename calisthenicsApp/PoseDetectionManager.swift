@@ -195,13 +195,30 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
             let rightAnkle = landmarks[28]
             let leftAnkleVis = leftAnkle.visibility?.floatValue ?? 0
             let rightAnkleVis = rightAnkle.visibility?.floatValue ?? 0
-            let anklesVisible = min(leftAnkleVis, rightAnkleVis) >= 0.4
-            let hipsVisible = min(leftHipVis, rightHipVis) >= 0.5 && anklesVisible
             let leftWristVis = landmarks[15].visibility?.floatValue ?? 0
             let rightWristVis = landmarks[16].visibility?.floatValue ?? 0
             let leftElbowVis = landmarks[13].visibility?.floatValue ?? 0
             let rightElbowVis = landmarks[14].visibility?.floatValue ?? 0
-            let armsVisible = [leftWristVis, rightWristVis, leftElbowVis, rightElbowVis].min() ?? 0 >= 0.5
+            
+            let sideMinVis: Float = 0.40
+            let frontMinVis: Float = 0.50
+            
+            let anklesVisible: Bool
+            let hipsVisible: Bool
+            let armsVisible: Bool
+            if effectivePostureMode == .side {
+                let sideHipVis = hip.visibility?.floatValue ?? 0
+                let sideAnkleVis = ankle.visibility?.floatValue ?? 0
+                let sideWristVis = wrist.visibility?.floatValue ?? 0
+                let sideElbowVis = elbow.visibility?.floatValue ?? 0
+                anklesVisible = sideAnkleVis >= sideMinVis
+                hipsVisible = sideHipVis >= sideMinVis && anklesVisible
+                armsVisible = min(sideWristVis, sideElbowVis) >= sideMinVis
+            } else {
+                anklesVisible = min(leftAnkleVis, rightAnkleVis) >= frontMinVis
+                hipsVisible = min(leftHipVis, rightHipVis) >= frontMinVis && anklesVisible
+                armsVisible = [leftWristVis, rightWristVis, leftElbowVis, rightElbowVis].min() ?? 0 >= frontMinVis
+            }
             
             let shoulderWidth = max(0.001, abs(Double(leftShoulder.x - rightShoulder.x)))
             let torsoLength = max(0.001, sqrt(pow(Double(shoulderMid.x - hipMid.x), 2) + pow(Double(shoulderMid.y - hipMid.y), 2)))

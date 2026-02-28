@@ -2,7 +2,7 @@
   "depthFrontThreshold": 110,
   "depthSideThreshold": 100,
   "lockoutFrontThreshold": 145,
-  "lockoutSideThreshold": 165,
+  "lockoutSideThreshold": 155,
   "lockoutHoldMS": 300,
   "minDownVelocityFront": -1,
   "minUpVelocityFront": 1,
@@ -76,7 +76,7 @@
       "message": "Tuck elbows in",
       "metric": "elbowFlareRatio",
       "op": "gt",
-      "threshold": 0.70,
+      "threshold": 0.75,
       "appliesIn": ["front"]
     },
     {
@@ -85,7 +85,7 @@
       "message": "Tuck elbows in",
       "metric": "elbowFlareRatio",
       "op": "gt",
-      "threshold": 0.55,
+      "threshold": 0.60,
       "appliesIn": ["front"]
     },
     {
@@ -103,7 +103,7 @@
       "message": "Tuck elbows in",
       "metric": "elbowFlare",
       "op": "gt",
-      "threshold": 60,
+      "threshold": 65,
       "appliesIn": ["side"]
     },
     {
@@ -130,7 +130,7 @@
       "message": "Match arm depth",
       "metric": "elbowAngleDiff",
       "op": "gt",
-      "threshold": 25,
+      "threshold": 30,
       "appliesIn": ["front"]
     },
     {
@@ -165,8 +165,8 @@
   "fsmSide": {
     "stateOrder": ["start", "descent", "bottom"],
     "states": {
-      "start": { "condition": "angle > 165" },
-      "descent": { "condition": "angle > 100 && angle <= 165" },
+      "start": { "condition": "angle > 155" },
+      "descent": { "condition": "angle > 100 && angle <= 155" },
       "bottom": { "condition": "angle <= 100" }
     },
     "counter": { "from": "descent", "to": "bottom" },

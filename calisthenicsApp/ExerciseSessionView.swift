@@ -7,6 +7,7 @@
 
 
 import SwiftUI
+import AVFoundation
 
 struct ExerciseSessionView: View {
     let selectedExercise: String
@@ -14,6 +15,7 @@ struct ExerciseSessionView: View {
     let sensitivity: FeedbackSensitivity
     let focus: FeedbackFocus
     let audioEnabled: Bool
+    let useFrontCamera: Bool
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var historyStore: WorkoutHistoryStore
     @EnvironmentObject private var settings: AppSettings
@@ -53,6 +55,8 @@ struct ExerciseSessionView: View {
                             .foregroundColor(palette.textPrimary)
                             .clipShape(Circle())
                     }
+                    .disabled(!isCountingDown)
+                    .opacity(isCountingDown ? 1.0 : 0.4)
                     Text(poseManager.isFrontCamera ? "Front Camera" : "Back Camera")
                         .font(.caption.bold())
                         .padding(.horizontal, 10)
@@ -200,6 +204,8 @@ struct ExerciseSessionView: View {
             }
         .navigationBarBackButtonHidden(true)
         .onAppear {
+            poseManager.cameraPosition = useFrontCamera ? .front : .back
+            poseManager.isFrontCamera = useFrontCamera
             poseManager.isPortraitMode = geo.size.height >= geo.size.width
             poseManager.isCoachingActive = audioEnabled
             startSequence()
