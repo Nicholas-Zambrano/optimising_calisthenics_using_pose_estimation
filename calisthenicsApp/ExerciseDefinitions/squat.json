@@ -1,0 +1,63 @@
+{
+  "depthThreshold": 95,
+  "lockoutAngle": 170,
+  "kneeValgusThreshold": 15,
+  "tempoMinSec": 0.6,
+  "feedbackRules": [
+    {
+      "id": "knees_caving",
+      "severity": "important",
+      "message": "Keep knees tr acking over feet",
+      "metric": "kneeValgus",
+      "op": "gt",
+      "threshold": 0.15,
+      "appliesIn": ["squat"]
+    },
+    {
+      "id": "leaning_forward",
+      "severity": "important",
+      "message": "Keep chest up",
+      "metric": "forwardLean",
+      "op": "gt",
+      "threshold": 0.35,
+      "appliesIn": ["squat"]
+    },
+    {
+      "id": "not_deep_enough",
+      "severity": "important",
+      "message": "Go deeper",
+      "metric": "shallowDepth",
+      "op": "gt",
+      "threshold": 0.5,
+      "appliesIn": ["squat"]
+    },
+    {
+      "id": "squat_depth",
+      "severity": "minor",
+      "message": "Aim for full depth",
+      "metric": "depthProgress",
+      "op": "lt",
+      "threshold": 0.7,
+      "appliesIn": ["squat"]
+    },
+    {
+      "id": "squat_tempo",
+      "severity": "minor",
+      "message": "Slow down the tempo",
+      "metric": "tempoFast",
+      "op": "gt",
+      "threshold": 0.5,
+      "appliesIn": ["squat"]
+    },
+    {
+      "id": "squat_visible",
+      "severity": "important",
+      "message": "Get full body in view",
+      "metric": "bodyVisible",
+      "op": "lt",
+      "threshold": 0.5,
+      "appliesIn": ["squat"]
+    }
+  ]
+}
+

@@ -11,11 +11,8 @@ import SwiftUI
 struct calisthenicsAppApp: App {
     var body: some Scene {
         WindowGroup {
-            NavigationStack {
-                MainMenuView()
-            }
+            AppShellView()
         }
     }
 }
-
 

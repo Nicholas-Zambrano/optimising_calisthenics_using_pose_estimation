@@ -1,0 +1,175 @@
+{
+  "depthFrontThreshold": 110,
+  "depthSideThreshold": 100,
+  "lockoutFrontThreshold": 145,
+  "lockoutSideThreshold": 165,
+  "lockoutHoldMS": 300,
+  "minDownVelocityFront": -1,
+  "minUpVelocityFront": 1,
+  "minDownVelocitySide": -20,
+  "minUpVelocitySide": 20,
+  "dwellFrontMS": 40,
+  "dwellSideMS": 80,
+  "hipBaseDefault": 0.18,
+  "flareBaseDefault": 0.5,
+  "shoulderAsymYellow": 0.08,
+  "shoulderAsymRed": 0.12,
+  "elbowDiffYellow": 15,
+  "elbowDiffRed": 25,
+  "hipPenaltyMax": 40,
+  "flarePenaltyMax": 30,
+  "depthPenaltyMax": 30,
+  "asymPenaltyMax": 25,
+  "hipPenaltyScale": 60,
+  "flarePenaltyScale": 50,
+  "depthPenaltyScale": 60,
+  "asymPenaltyScale": 60,
+  "feedbackRules": [
+    {
+      "id": "arms_not_visible",
+      "severity": "important",
+      "message": "Arms not visible — move closer",
+      "metric": "armsVisible",
+      "op": "lt",
+      "threshold": 0.5,
+      "appliesIn": ["front", "side"]
+    },
+    {
+      "id": "hips_not_visible",
+      "severity": "important",
+      "message": "Hips not visible — step back or lower camera",
+      "metric": "hipsVisible",
+      "op": "lt",
+      "threshold": 0.5,
+      "appliesIn": ["front", "fullBody"]
+    },
+    {
+      "id": "hip_sag_critical",
+      "severity": "critical",
+      "message": "Lift hips, keep body straight",
+      "metric": "hipDropRatio",
+      "op": "gt",
+      "threshold": 0.30,
+      "appliesIn": ["front", "fullBody", "landscape"]
+    },
+    {
+      "id": "hips_too_high",
+      "severity": "important",
+      "message": "Lower hips, keep body straight",
+      "metric": "hipRiseRatio",
+      "op": "gt",
+      "threshold": 0.12,
+      "appliesIn": ["front", "fullBody", "landscape"]
+    },
+    {
+      "id": "hip_sag",
+      "severity": "important",
+      "message": "Lift hips, keep body straight",
+      "metric": "hipDropRatio",
+      "op": "gt",
+      "threshold": 0.22,
+      "appliesIn": ["front", "fullBody", "landscape"]
+    },
+    {
+      "id": "elbow_flare_critical",
+      "severity": "critical",
+      "message": "Tuck elbows in",
+      "metric": "elbowFlareRatio",
+      "op": "gt",
+      "threshold": 0.70,
+      "appliesIn": ["front"]
+    },
+    {
+      "id": "elbow_flare",
+      "severity": "important",
+      "message": "Tuck elbows in",
+      "metric": "elbowFlareRatio",
+      "op": "gt",
+      "threshold": 0.55,
+      "appliesIn": ["front"]
+    },
+    {
+      "id": "back_angle_critical",
+      "severity": "critical",
+      "message": "Keep back straight",
+      "metric": "backAngle",
+      "op": "lt",
+      "threshold": 155,
+      "appliesIn": ["side"]
+    },
+    {
+      "id": "elbow_flare_side",
+      "severity": "important",
+      "message": "Tuck elbows in",
+      "metric": "elbowFlare",
+      "op": "gt",
+      "threshold": 60,
+      "appliesIn": ["side"]
+    },
+    {
+      "id": "shoulder_asym_critical",
+      "severity": "critical",
+      "message": "Press evenly through both hands",
+      "metric": "shoulderAsym",
+      "op": "gt",
+      "threshold": 0.12,
+      "appliesIn": ["fullBody", "landscape"]
+    },
+    {
+      "id": "shoulder_asym",
+      "severity": "important",
+      "message": "Press evenly through both hands",
+      "metric": "shoulderAsym",
+      "op": "gt",
+      "threshold": 0.08,
+      "appliesIn": ["fullBody", "landscape"]
+    },
+    {
+      "id": "elbow_diff",
+      "severity": "important",
+      "message": "Match arm depth",
+      "metric": "elbowAngleDiff",
+      "op": "gt",
+      "threshold": 25,
+      "appliesIn": ["front"]
+    },
+    {
+      "id": "shallow_depth",
+      "severity": "important",
+      "message": "Go deeper",
+      "metric": "depthProgress",
+      "op": "lt",
+      "threshold": 0.6,
+      "appliesIn": ["front", "side", "fullBody"]
+    },
+    {
+      "id": "tempo_fast",
+      "severity": "minor",
+      "message": "Slow down the tempo",
+      "metric": "tempoFast",
+      "op": "gt",
+      "threshold": 0.5,
+      "appliesIn": ["front", "side", "fullBody"]
+    }
+  ],
+  "fsmFront": {
+    "stateOrder": ["start", "descent", "bottom"],
+    "states": {
+      "start": { "condition": "angle > 150" },
+      "descent": { "condition": "angle > 90 && angle <= 150" },
+      "bottom": { "condition": "angle <= 90" }
+    },
+    "counter": { "from": "descent", "to": "bottom" },
+    "minRepDurationSec": 0.6
+  },
+  "fsmSide": {
+    "stateOrder": ["start", "descent", "bottom"],
+    "states": {
+      "start": { "condition": "angle > 165" },
+      "descent": { "condition": "angle > 100 && angle <= 165" },
+      "bottom": { "condition": "angle <= 100" }
+    },
+    "counter": { "from": "descent", "to": "bottom" },
+    "minRepDurationSec": 0.6
+  }
+}

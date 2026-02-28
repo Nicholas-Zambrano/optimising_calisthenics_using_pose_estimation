@@ -1,5 +1,6 @@
 Pods/
 .xcworkspace/
+calisthenicsApp.xcworkspace/xcuserdata/
 *.task
 .DS_Store
 DerivedData/

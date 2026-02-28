@@ -1,0 +1,36 @@
+{
+  "chinOverBarAngle": 65,
+  "bottomAngle": 160,
+  "asymmetryAngleDiff": 15,
+  "tempoMinSec": 0.6,
+  "feedbackRules": [
+    {
+      "id": "pullup_height",
+      "severity": "important",
+      "message": "Pull higher",
+      "metric": "depthProgress",
+      "op": "lt",
+      "threshold": 0.7,
+      "appliesIn": ["pullup"]
+    },
+    {
+      "id": "pullup_tempo",
+      "severity": "minor",
+      "message": "Slow down the tempo",
+      "metric": "tempoFast",
+      "op": "gt",
+      "threshold": 0.5,
+      "appliesIn": ["pullup"]
+    },
+    {
+      "id": "pullup_visible",
+      "severity": "important",
+      "message": "Upper body not visible",
+      "metric": "bodyVisible",
+      "op": "lt",
+      "threshold": 0.5,
+      "appliesIn": ["pullup"]
+    }
+  ]
+}
+

@@ -13,6 +13,7 @@ import MediaPipeTasksVision
 struct LandmarkOverlayView: View {
     var landmarks: [NormalizedLandmark]
     var overlayColors: OverlayColors
+    var mirrorX: Bool = false
     
     private let connections = [
         (11, 12), (11, 13), (13, 15), // Right Arm
@@ -29,21 +30,26 @@ struct LandmarkOverlayView: View {
                 let end = landmarks[connection.1]
                 
                 var path = Path()
-                path.move(to: CGPoint(x: CGFloat(start.x) * size.width, y: CGFloat(start.y) * size.height))
-                path.addLine(to: CGPoint(x: CGFloat(end.x) * size.width, y: CGFloat(end.y) * size.height))
+                path.move(to: CGPoint(x: mirror(start.x, size.width), y: CGFloat(start.y) * size.height))
+                path.addLine(to: CGPoint(x: mirror(end.x, size.width), y: CGFloat(end.y) * size.height))
                 
                 let color = colorForConnection(connection)
                 context.stroke(path, with: .color(color), lineWidth: 3)
             }
             
             for landmark in landmarks {
-                let x = CGFloat(landmark.x) * size.width
+                let x = mirror(landmark.x, size.width)
                 let y = CGFloat(landmark.y) * size.height
                 let rect = CGRect(x: x - 4, y: y - 4, width: 8, height: 8)
                 context.fill(Path(ellipseIn: rect), with: .color(.white))
             }
         }
         .drawingGroup()
+    }
+
+    private func mirror(_ x: Float, _ width: CGFloat) -> CGFloat {
+        let px = CGFloat(x) * width
+        return mirrorX ? (width - px) : px
     }
     
     private func colorForConnection(_ connection: (Int, Int)) -> Color {
@@ -68,6 +74,7 @@ struct InstructionOverlayView: View {
     let landmarks: [NormalizedLandmark]
     let primary: String
     let secondary: String
+    var mirrorX: Bool = false
 
     var body: some View {
         GeometryReader { _ in
@@ -104,7 +111,9 @@ struct InstructionOverlayView: View {
     }
 
     private func point(_ lm: NormalizedLandmark, _ size: CGSize) -> CGPoint {
-        CGPoint(x: CGFloat(lm.x) * size.width, y: CGFloat(lm.y) * size.height)
+        let x = CGFloat(lm.x) * size.width
+        let mirroredX = mirrorX ? (size.width - x) : x
+        return CGPoint(x: mirroredX, y: CGFloat(lm.y) * size.height)
     }
 
     private func mid(_ a: CGPoint, _ b: CGPoint) -> CGPoint {
