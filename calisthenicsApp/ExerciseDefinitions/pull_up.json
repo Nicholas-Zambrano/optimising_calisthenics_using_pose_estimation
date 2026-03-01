@@ -6,20 +6,65 @@
   "feedbackRules": [
     {
       "id": "pullup_height",
-      "severity": "important",
-      "message": "Pull higher",
+      "severity": "critical",
+      "message": "Chin not reaching bar",
       "metric": "depthProgress",
       "op": "lt",
-      "threshold": 0.7,
+      "threshold": 0.75,
+      "appliesIn": ["pullup"]
+    },
+    {
+      "id": "pullup_asymmetry_shoulder",
+      "severity": "critical",
+      "message": "Asymmetrical pull",
+      "metric": "shoulderAsym",
+      "op": "gt",
+      "threshold": 0.12,
+      "appliesIn": ["pullup"]
+    },
+    {
+      "id": "pullup_asymmetry_elbow",
+      "severity": "critical",
+      "message": "Uneven elbow angles",
+      "metric": "elbowAngleDiff",
+      "op": "gt",
+      "threshold": 20.0,
+      "appliesIn": ["pullup"]
+    },
+    {
+      "id": "pullup_kipping",
+      "severity": "critical",
+      "message": "Excessive kipping",
+      "metric": "hipSwing",
+      "op": "gt",
+      "threshold": 0.22,
+      "appliesIn": ["pullup"]
+    },
+    {
+      "id": "pullup_lockout",
+      "severity": "important",
+      "message": "Lock out at the bottom",
+      "metric": "lockoutIncomplete",
+      "op": "gt",
+      "threshold": 0.5,
       "appliesIn": ["pullup"]
     },
     {
       "id": "pullup_tempo",
-      "severity": "minor",
+      "severity": "important",
       "message": "Slow down the tempo",
       "metric": "tempoFast",
       "op": "gt",
       "threshold": 0.5,
+      "appliesIn": ["pullup"]
+    },
+    {
+      "id": "pullup_shrugging",
+      "severity": "important",
+      "message": "Avoid shrugging",
+      "metric": "shoulderEarGap",
+      "op": "lt",
+      "threshold": 0.045,
       "appliesIn": ["pullup"]
     },
     {
@@ -29,6 +74,24 @@
       "metric": "bodyVisible",
       "op": "lt",
       "threshold": 0.5,
+      "appliesIn": ["pullup"]
+    },
+    {
+      "id": "pullup_head_forward",
+      "severity": "minor",
+      "message": "Keep head neutral",
+      "metric": "headOffset",
+      "op": "gt",
+      "threshold": 0.25,
+      "appliesIn": ["pullup"]
+    },
+    {
+      "id": "pullup_elbow_flare",
+      "severity": "minor",
+      "message": "Keep elbows closer",
+      "metric": "elbowFlare",
+      "op": "gt",
+      "threshold": 65.0,
       "appliesIn": ["pullup"]
     }
   ]

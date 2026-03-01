@@ -92,6 +92,13 @@ final class ExerciseEngine {
     private var pullUpState: String = "DOWN"
     private var pullUpRepMinAngle: Double = 999
     private var pullUpRepStartMS: Int?
+    private var pullUpRepMaxElbowAngle: Double = 0
+    private var pullUpRepMaxShoulderAsym: Double = 0
+    private var pullUpRepMaxElbowDiff: Double = 0
+    private var pullUpRepMaxHipSwing: Double = 0
+    private var pullUpRepMinShoulderEarGap: Double = 999
+    private var pullUpRepMaxHeadOffset: Double = 0
+    private var pullUpRepMaxElbowFlare: Double = 0
     
     private(set) var repCount: Int = 0
     private(set) var cleanReps: Int = 0
@@ -163,6 +170,13 @@ final class ExerciseEngine {
         pullUpState = "DOWN"
         pullUpRepMinAngle = 999
         pullUpRepStartMS = nil
+        pullUpRepMaxElbowAngle = 0
+        pullUpRepMaxShoulderAsym = 0
+        pullUpRepMaxElbowDiff = 0
+        pullUpRepMaxHipSwing = 0
+        pullUpRepMinShoulderEarGap = 999
+        pullUpRepMaxHeadOffset = 0
+        pullUpRepMaxElbowFlare = 0
     }
 
     func updatePushUp(metrics: PushUpMetrics,
@@ -368,65 +382,165 @@ final class ExerciseEngine {
         )
     }
 
-    func updatePullUp(shoulder: NormalizedLandmark,
-                      elbow: NormalizedLandmark,
-                      wrist: NormalizedLandmark,
+    func updatePullUp(landmarks: [NormalizedLandmark],
                       timestampMS: Int) -> EngineOutput {
-        let shoulderVis = shoulder.visibility?.floatValue ?? 0
-        let elbowVis = elbow.visibility?.floatValue ?? 0
-        let wristVis = wrist.visibility?.floatValue ?? 0
-        let bodyVisible = min(shoulderVis, elbowVis, wristVis) >= 0.4
+        lastTimestampMS = timestampMS
+        let leftShoulder = landmarks[11]
+        let rightShoulder = landmarks[12]
+        let leftElbow = landmarks[13]
+        let rightElbow = landmarks[14]
+        let leftWrist = landmarks[15]
+        let rightWrist = landmarks[16]
+        let leftHip = landmarks[23]
+        let rightHip = landmarks[24]
+        let leftEar = landmarks[7]
+        let rightEar = landmarks[8]
+        let nose = landmarks[0]
 
-        let angle = evaluator.calculateAngle(p1: shoulder, p2: elbow, p3: wrist)
+        let leftShoulderVis = leftShoulder.visibility?.floatValue ?? 0
+        let rightShoulderVis = rightShoulder.visibility?.floatValue ?? 0
+        let leftElbowVis = leftElbow.visibility?.floatValue ?? 0
+        let rightElbowVis = rightElbow.visibility?.floatValue ?? 0
+        let leftWristVis = leftWrist.visibility?.floatValue ?? 0
+        let rightWristVis = rightWrist.visibility?.floatValue ?? 0
+        let bodyVisible = min(leftShoulderVis, rightShoulderVis, leftElbowVis, rightElbowVis, leftWristVis, rightWristVis) >= 0.4
+
+        let leftElbowAngle = evaluator.calculateAngle(p1: leftShoulder, p2: leftElbow, p3: leftWrist)
+        let rightElbowAngle = evaluator.calculateAngle(p1: rightShoulder, p2: rightElbow, p3: rightWrist)
+        let angle = (leftElbowAngle + rightElbowAngle) / 2.0
         depthProgress = depthProgressFor(currentAngle: angle, minAngle: pullUpConfig.chinOverBarAngle, maxAngle: pullUpConfig.bottomAngle)
         pullUpRepMinAngle = min(pullUpRepMinAngle, angle)
 
         let topReached = angle <= pullUpConfig.chinOverBarAngle
         let bottomAngle = pullUpConfig.bottomAngle
 
+        let shoulderWidth = max(0.001, abs(Double(leftShoulder.x - rightShoulder.x)))
+        let shoulderAsym = abs(Double(leftShoulder.y - rightShoulder.y)) / shoulderWidth
+        let elbowAngleDiff = abs(leftElbowAngle - rightElbowAngle)
+
+        let shoulderMidX = (Double(leftShoulder.x) + Double(rightShoulder.x)) / 2.0
+        let hipMidX = (Double(leftHip.x) + Double(rightHip.x)) / 2.0
+        let hipSwing = abs(hipMidX - shoulderMidX) / shoulderWidth
+
+        let maxElbowAngle = max(leftElbowAngle, rightElbowAngle)
+        pullUpRepMaxElbowAngle = max(pullUpRepMaxElbowAngle, maxElbowAngle)
+
+        let leftEarVis = leftEar.visibility?.floatValue ?? 0
+        let rightEarVis = rightEar.visibility?.floatValue ?? 0
+        let earVis = min(leftEarVis, rightEarVis)
+        let leftGap = max(0.0, Double(leftShoulder.y - leftEar.y))
+        let rightGap = max(0.0, Double(rightShoulder.y - rightEar.y))
+        let shoulderEarGap = earVis >= 0.4 ? ((leftGap + rightGap) / 2.0) : 1.0
+
+        let noseVis = nose.visibility?.floatValue ?? 0
+        let headOffset = noseVis >= 0.4 ? abs(Double(nose.x) - shoulderMidX) / shoulderWidth : 0.0
+
+        let leftElbowFlare = evaluator.calculateAngle(p1: leftHip, p2: leftShoulder, p3: leftElbow)
+        let rightElbowFlare = evaluator.calculateAngle(p1: rightHip, p2: rightShoulder, p3: rightElbow)
+        let elbowFlare = max(leftElbowFlare, rightElbowFlare)
+
+        if pullUpRepStartMS != nil {
+            pullUpRepMaxShoulderAsym = max(pullUpRepMaxShoulderAsym, shoulderAsym)
+            pullUpRepMaxElbowDiff = max(pullUpRepMaxElbowDiff, elbowAngleDiff)
+            pullUpRepMaxHipSwing = max(pullUpRepMaxHipSwing, hipSwing)
+            pullUpRepMinShoulderEarGap = min(pullUpRepMinShoulderEarGap, shoulderEarGap)
+            pullUpRepMaxHeadOffset = max(pullUpRepMaxHeadOffset, headOffset)
+            pullUpRepMaxElbowFlare = max(pullUpRepMaxElbowFlare, elbowFlare)
+        }
+
+        let wristsBelow = leftWrist.y > leftShoulder.y && rightWrist.y > rightShoulder.y
+        if wristsBelow {
+            if shouldUpdateLiveFeedback(message: "Get onto the bar") {
+                updateFeedback(message: "Get onto the bar", secondary: "", risk: .low)
+            }
+            overlayColors = colorsForRisk(.low, arms: true, legs: false)
+            return EngineOutput(
+                repCount: repCount,
+                cleanReps: cleanReps,
+                overallScore: overallScore,
+                depthProgress: 0,
+                overlayColors: overlayColors,
+                feedbackMessage: feedbackMessage,
+                secondaryHint: secondaryHint,
+                currentRisk: currentRisk,
+                lastRepScore: lastRepScore,
+                isSessionComplete: isSessionComplete,
+                sessionSummary: sessionSummary,
+                debugText: debugText,
+                speakMessage: nil
+            )
+        }
+
         if pullUpState == "DOWN" {
-            if pullUpRepStartMS == nil { pullUpRepStartMS = timestampMS }
+            if pullUpRepStartMS == nil {
+                pullUpRepStartMS = timestampMS
+                pullUpRepMaxElbowAngle = 0
+                pullUpRepMaxShoulderAsym = 0
+                pullUpRepMaxElbowDiff = 0
+                pullUpRepMaxHipSwing = 0
+                pullUpRepMinShoulderEarGap = 999
+                pullUpRepMaxHeadOffset = 0
+                pullUpRepMaxElbowFlare = 0
+            }
             if topReached { pullUpState = "UP" }
+            if shouldUpdateLiveFeedback(message: "Pull up") {
+                updateFeedback(message: "Pull up", secondary: "", risk: .low)
+            }
         } else {
             if angle >= bottomAngle {
                 let durationSec = pullUpRepStartMS.map { Double(timestampMS - $0) / 1000.0 } ?? 0
-                let tooFast = durationSec > 0 && durationSec < pullUpConfig.tempoMinSec
-                let shallow = !topReached
-                var repScore = 100
-                if shallow { repScore -= 30 }
-                if tooFast { repScore -= 20 }
-                repScore = max(0, repScore)
+                let repDepthProgress = depthProgressFor(
+                    currentAngle: pullUpRepMinAngle,
+                    minAngle: pullUpConfig.chinOverBarAngle,
+                    maxAngle: pullUpConfig.bottomAngle
+                )
+                let repLockoutIncomplete = pullUpRepMaxElbowAngle < (pullUpConfig.bottomAngle - 10.0) ? 1.0 : 0.0
+                let repValues: [String: Double] = [
+                    "depthProgress": repDepthProgress,
+                    "tempoFast": (durationSec > 0 && durationSec < pullUpConfig.tempoMinSec) ? 1.0 : 0.0,
+                    "bodyVisible": bodyVisible ? 1.0 : 0.0,
+                    "shoulderAsym": pullUpRepMaxShoulderAsym,
+                    "elbowAngleDiff": pullUpRepMaxElbowDiff,
+                    "hipSwing": pullUpRepMaxHipSwing,
+                    "lockoutIncomplete": repLockoutIncomplete,
+                    "shoulderEarGap": pullUpRepMinShoulderEarGap == 999 ? 1.0 : pullUpRepMinShoulderEarGap,
+                    "headOffset": pullUpRepMaxHeadOffset,
+                    "elbowFlare": pullUpRepMaxElbowFlare
+                ]
+
+                let matchedForScore = evaluateRules(values: repValues, postureMode: .front, exerciseTag: "pullup", rules: pullUpConfig.feedbackRules)
+                let repScore = scoreForRules(matchedForScore)
                 lastRepScore = repScore
                 repScores.append(repScore)
                 overallScore = repScores.isEmpty ? 0 : Int(Double(repScores.reduce(0, +)) / Double(repScores.count))
 
                 if repScore >= 85 { cleanReps += 1 }
                 repCount += 1
+                let msg = messageForRules(matchedForScore)
+                let sec = secondaryMessageForRules(matchedForScore)
+                let repRisk: RiskLevel = matchedForScore.contains(where: { $0.severity == .critical }) ? .critical
+                    : (matchedForScore.contains(where: { $0.severity == .important }) ? .medium : .low)
+                updateFeedback(message: msg, secondary: sec, risk: repRisk, force: true)
                 pullUpState = "DOWN"
                 pullUpRepMinAngle = 999
                 pullUpRepStartMS = nil
+                pullUpRepMaxElbowAngle = 0
+                pullUpRepMaxShoulderAsym = 0
+                pullUpRepMaxElbowDiff = 0
+                pullUpRepMaxHipSwing = 0
+                pullUpRepMinShoulderEarGap = 999
+                pullUpRepMaxHeadOffset = 0
+                pullUpRepMaxElbowFlare = 0
 
                 if repCount >= targetReps {
                     isSessionComplete = true
                     sessionSummary = buildSessionSummary()
                 }
+            } else if shouldUpdateLiveFeedback(message: "Lower under control") {
+                updateFeedback(message: "Lower under control", secondary: "", risk: .low)
             }
         }
 
-        let values: [String: Double] = [
-            "depthProgress": depthProgress,
-            "tempoFast": (pullUpRepStartMS != nil && (Double(timestampMS - (pullUpRepStartMS ?? timestampMS)) / 1000.0) < pullUpConfig.tempoMinSec) ? 1.0 : 0.0,
-            "bodyVisible": bodyVisible ? 1.0 : 0.0
-        ]
-
-        let matched = evaluateRules(values: values, postureMode: .front, exerciseTag: "pullup", rules: pullUpConfig.feedbackRules)
-        feedbackMessage = messageForRules(matched)
-        secondaryHint = secondaryMessageForRules(matched)
-        if let primary = matched.sorted(by: { severityRank($0.severity) > severityRank($1.severity) }).first {
-            currentRisk = riskLevel(for: primary.severity)
-        } else {
-            currentRisk = .low
-        }
         overlayColors = colorsForRisk(currentRisk, arms: true, legs: false)
         return EngineOutput(
             repCount: repCount,
@@ -1006,7 +1120,11 @@ final class ExerciseEngine {
         if tags.contains(where: { exerciseTags.contains($0) }) && !tags.contains(exerciseTag) {
             return false
         }
-        if tags.contains(modeTag) == false { return false }
+        let viewTags = ["front", "side"]
+        let ruleHasViewTag = tags.contains(where: { viewTags.contains($0) })
+        if ruleHasViewTag && !tags.contains(modeTag) {
+            return false
+        }
         if tags.contains("portrait") && !isPortraitMode { return false }
         if tags.contains("landscape") && isPortraitMode { return false }
         if tags.contains("fullBody") && feedbackFocus != .fullBody { return false }

@@ -3,6 +3,7 @@ import AVFoundation
 import MediaPipeTasksVision
 import UIKit
 import Combine
+import SwiftUI
 
 final class OfflineAnalysisManager: ObservableObject {
     struct RepSummary: Identifiable {
@@ -45,6 +46,7 @@ final class OfflineAnalysisManager: ObservableObject {
     private var isCancelled = false
     private var bestScore: Int = -1
     private var worstScore: Int = 101
+    private var loggedFirstSnapshot = false
     
     func cancel() {
         isCancelled = true
@@ -58,6 +60,7 @@ final class OfflineAnalysisManager: ObservableObject {
         worstSnapshot = nil
         bestScore = -1
         worstScore = 101
+        loggedFirstSnapshot = false
         repSummaries = []
         status = "Preparing video..."
         logLines = []
@@ -174,6 +177,9 @@ final class OfflineAnalysisManager: ObservableObject {
                     guard let image = try? MPImage(pixelBuffer: pixelBuffer, orientation: .up) else { return }
                     if let result = try? poseLandmarker.detect(videoFrame: image, timestampInMilliseconds: tsMS),
                        let landmarks = result.landmarks.first {
+                        if !self.isEngagedForExercise(exercise: exercise, landmarks: landmarks) {
+                            return
+                        }
                         if tsMS - lastLogMS >= 1000 {
                             lastLogMS = tsMS
                             let w = CVPixelBufferGetWidth(pixelBuffer)
@@ -182,34 +188,36 @@ final class OfflineAnalysisManager: ObservableObject {
                                 self.logLines.append("t=\(tsMS)ms buffer=\(w)x\(h) reps=\(processor.repCount)")
                             }
                         }
-                        DispatchQueue.main.async {
-                            processor.processLandmarks(landmarks, timestampMS: tsMS)
-                            self.sessionSummary = processor.sessionSummary
-                        }
-                        
-                        if processor.depthProgress >= currentRepMaxDepth && processor.depthProgress > 0.5 {
-                            currentRepMaxDepth = processor.depthProgress
-                            currentRepSnapshot = self.renderAnnotatedFrame(pixelBuffer: pixelBuffer,
-                                                                           landmarks: landmarks)
+                        let processed = self.processOnMain(processor: processor, landmarks: landmarks, timestampMS: tsMS)
+                        if processed.depthProgress >= currentRepMaxDepth && processed.depthProgress > 0.5 {
+                            currentRepMaxDepth = processed.depthProgress
+                            currentRepSnapshot = self.renderAnnotatedFrame(
+                                pixelBuffer: pixelBuffer,
+                                landmarks: landmarks,
+                                overlayColors: processed.overlayColors
+                            )
                         }
 
-                        if processor.repCount > lastRepCount {
-                            lastRepCount = processor.repCount
-                            let frame = currentRepSnapshot ?? self.renderAnnotatedFrame(pixelBuffer: pixelBuffer,
-                                                                                        landmarks: landmarks)
+                        if processed.repCount > lastRepCount {
+                            lastRepCount = processed.repCount
+                            let frame = currentRepSnapshot ?? self.renderAnnotatedFrame(
+                                pixelBuffer: pixelBuffer,
+                                landmarks: landmarks,
+                                overlayColors: processed.overlayColors
+                            )
                             let summary = RepSummary(
-                                repIndex: processor.repCount,
+                                repIndex: processed.repCount,
                                 timestampMS: tsMS,
-                                score: processor.lastRepScore,
-                                primaryMessage: processor.feedbackMessage,
-                                risk: processor.currentRisk,
+                                score: processed.lastRepScore,
+                                primaryMessage: processed.feedbackMessage,
+                                risk: processed.risk,
                                 snapshot: frame
                             )
                             DispatchQueue.main.async {
                                 self.repSummaries.append(summary)
                             }
                             if let frame = frame {
-                                let score = processor.lastRepScore
+                                let score = processed.lastRepScore
                                 DispatchQueue.main.async {
                                     if score >= self.bestScore {
                                         self.bestScore = score
@@ -223,6 +231,13 @@ final class OfflineAnalysisManager: ObservableObject {
                             }
                             currentRepMaxDepth = 0.0
                             currentRepSnapshot = nil
+                        }
+                        
+                        if !self.loggedFirstSnapshot, let frame = currentRepSnapshot ?? self.bestSnapshot ?? self.worstSnapshot {
+                            self.loggedFirstSnapshot = true
+                            DispatchQueue.main.async {
+                                self.logLines.append("snapshot size=\(Int(frame.size.width))x\(Int(frame.size.height)) mirror=\(self.mirrorOverlay)")
+                            }
                         }
                     }
                     
@@ -401,16 +416,31 @@ final class OfflineAnalysisManager: ObservableObject {
                     guard let image = try? MPImage(pixelBuffer: pixelBuffer, orientation: .up) else { return }
                     guard let result = try? poseLandmarker.detect(videoFrame: image, timestampInMilliseconds: tsMS),
                           let landmarks = result.landmarks.first else { return }
-                    
-                    processor.processLandmarks(landmarks, timestampMS: tsMS)
+
+                    let engaged = self.isEngagedForExercise(exercise: exercise, landmarks: landmarks)
+                    let processed = engaged ? self.processOnMain(processor: processor, landmarks: landmarks, timestampMS: tsMS) : nil
                     guard let pool = adaptor.pixelBufferPool else { return }
                     let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
                     if let outBuffer = self.makePixelBuffer(from: ciImage, pool: pool) {
-                        self.drawOverlay(on: outBuffer,
-                                         landmarks: landmarks,
-                                         message: processor.feedbackMessage,
-                                         score: processor.lastRepScore,
-                                         risk: processor.currentRisk)
+                        if let processed = processed {
+                            self.drawOverlay(
+                                on: outBuffer,
+                                landmarks: landmarks,
+                                overlayColors: processed.overlayColors,
+                                message: processed.feedbackMessage,
+                                score: processed.lastRepScore,
+                                risk: processed.risk
+                            )
+                        } else {
+                            self.drawOverlay(
+                                on: outBuffer,
+                                landmarks: landmarks,
+                                overlayColors: .neutral,
+                                message: "Resting",
+                                score: 0,
+                                risk: .low
+                            )
+                        }
                         adaptor.append(outBuffer, withPresentationTime: ts)
                     }
                 }
@@ -436,7 +466,9 @@ final class OfflineAnalysisManager: ObservableObject {
     }
 
     
-    private func renderAnnotatedFrame(pixelBuffer: CVPixelBuffer, landmarks: [NormalizedLandmark]) -> UIImage? {
+    private func renderAnnotatedFrame(pixelBuffer: CVPixelBuffer,
+                                      landmarks: [NormalizedLandmark],
+                                      overlayColors: OverlayColors) -> UIImage? {
         let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
         let extent = ciImage.extent.integral
         guard let cgImage = ciContext.createCGImage(ciImage, from: extent) else { return nil }
@@ -449,7 +481,6 @@ final class OfflineAnalysisManager: ObservableObject {
         videoImage.draw(in: CGRect(origin: .zero, size: imageSize))
         
         guard let ctx = UIGraphicsGetCurrentContext() else { return nil }
-        ctx.setStrokeColor(UIColor.systemGreen.cgColor)
         ctx.setLineWidth(5.0)
         
         let points = landmarks.map { landmark -> CGPoint in
@@ -468,6 +499,7 @@ final class OfflineAnalysisManager: ObservableObject {
         ]
         for (a, b) in connections {
             guard a < points.count, b < points.count else { continue }
+            ctx.setStrokeColor(colorFor(connection: (a, b), overlayColors: overlayColors).cgColor)
             ctx.move(to: points[a])
             ctx.addLine(to: points[b])
             ctx.strokePath()
@@ -503,8 +535,78 @@ final class OfflineAnalysisManager: ObservableObject {
         ciContext.render(ciImage, to: buffer, bounds: rect, colorSpace: CGColorSpaceCreateDeviceRGB())
         return buffer
     }
+    
+//    private func drawOverlay(on pixelBuffer: CVPixelBuffer,
+//                             landmarks: [NormalizedLandmark],
+//                             overlayColors: OverlayColors,
+//                             message: String,
+//                             score: Int,
+//                             risk: RiskLevel) {
+//        CVPixelBufferLockBaseAddress(pixelBuffer, [])
+//        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, []) }
+//
+//        let width = CVPixelBufferGetWidth(pixelBuffer)
+//        let height = CVPixelBufferGetHeight(pixelBuffer)
+//        guard let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) else { return }
+//
+//        let colorSpace = CGColorSpaceCreateDeviceRGB()
+//        let bitmapInfo = CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
+//        guard let ctx = CGContext(
+//            data: baseAddress,
+//            width: width,
+//            height: height,
+//            bitsPerComponent: 8,
+//            bytesPerRow: CVPixelBufferGetBytesPerRow(pixelBuffer),
+//            space: colorSpace,
+//            bitmapInfo: bitmapInfo
+//        ) else { return }
+//
+//        ctx.translateBy(x: 0, y: CGFloat(height))
+//        ctx.scaleBy(x: 1.0, y: -1.0)
+//        ctx.setLineWidth(3.0)
+//
+//        let imageSize = CGSize(width: width, height: height)
+//        let points = landmarks.map { landmark -> CGPoint in
+//            let x = CGFloat(landmark.x) * imageSize.width
+//            let y = CGFloat(landmark.y) * imageSize.height
+//            if mirrorOverlay {
+//                return CGPoint(x: imageSize.width - x, y: y)
+//            }
+//            return CGPoint(x: x, y: y)
+//        }
+//        let connections: [(Int, Int)] = [
+//            (11, 13), (13, 15),
+//            (12, 14), (14, 16),
+//            (11, 12), (11, 23), (12, 24),
+//            (23, 24),
+//            (23, 25), (25, 27),
+//            (24, 26), (26, 28)
+//        ]
+//        for (a, b) in connections {
+//            guard a < points.count, b < points.count else { continue }
+//            ctx.setStrokeColor(colorFor(connection: (a, b), overlayColors: overlayColors).cgColor)
+//            ctx.move(to: points[a])
+//            ctx.addLine(to: points[b])
+//            ctx.strokePath()
+//        }
+//
+//        ctx.scaleBy(x: 1.0, y: -1.0)
+//        ctx.translateBy(x: 0, y: -CGFloat(height))
+//        UIGraphicsPushContext(ctx)
+//        let color: UIColor = (risk == .critical) ? .systemRed : (risk == .medium ? .systemOrange : .systemGreen)
+//        let text = "Score \(score)%  •  \(message)"
+//        let attrs: [NSAttributedString.Key: Any] = [
+//            .font: UIFont.systemFont(ofSize: 20, weight: .bold),
+//            .foregroundColor: UIColor.white,
+//            .backgroundColor: color.withAlphaComponent(0.7)
+//        ]
+//        (text as NSString).draw(at: CGPoint(x: 20, y: 20), withAttributes: attrs)
+//        UIGraphicsPopContext()
+//    }
+    
     private func drawOverlay(on pixelBuffer: CVPixelBuffer,
                              landmarks: [NormalizedLandmark],
+                             overlayColors: OverlayColors,
                              message: String,
                              score: Int,
                              risk: RiskLevel) {
@@ -527,10 +629,10 @@ final class OfflineAnalysisManager: ObservableObject {
             bitmapInfo: bitmapInfo
         ) else { return }
 
+        // 1. Flip to Top-Left for MediaPipe skeleton
         ctx.translateBy(x: 0, y: CGFloat(height))
         ctx.scaleBy(x: 1.0, y: -1.0)
-        ctx.setStrokeColor(UIColor.systemGreen.cgColor)
-        ctx.setLineWidth(3.0)
+        ctx.setLineWidth(5.0) // Thicker for better video visibility
 
         let imageSize = CGSize(width: width, height: height)
         let points = landmarks.map { landmark -> CGPoint in
@@ -541,6 +643,7 @@ final class OfflineAnalysisManager: ObservableObject {
             }
             return CGPoint(x: x, y: y)
         }
+        
         let connections: [(Int, Int)] = [
             (11, 13), (13, 15),
             (12, 14), (14, 16),
@@ -549,29 +652,107 @@ final class OfflineAnalysisManager: ObservableObject {
             (23, 25), (25, 27),
             (24, 26), (26, 28)
         ]
+        
+        // Draw the skeleton
         for (a, b) in connections {
             guard a < points.count, b < points.count else { continue }
+            ctx.setStrokeColor(colorFor(connection: (a, b), overlayColors: overlayColors).cgColor)
             ctx.move(to: points[a])
             ctx.addLine(to: points[b])
             ctx.strokePath()
         }
 
+        // 2. Create a transparent UIImage containing our Text
+        UIGraphicsBeginImageContextWithOptions(imageSize, false, 1.0)
+        let color: UIColor = (risk == .critical) ? .systemRed : (risk == .medium ? .systemOrange : .systemGreen)
+        
+        let text = " Score \(score)%  •  \(message) "
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 42, weight: .heavy),
+            .foregroundColor: UIColor.white,
+            .backgroundColor: color.withAlphaComponent(0.85)
+        ]
+        
+        // Draw text near the top-left of the screen
+        (text as NSString).draw(at: CGPoint(x: 40, y: 80), withAttributes: attrs)
+        let textOverlayImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        // 3. Revert the CGContext back to Bottom-Left
         ctx.scaleBy(x: 1.0, y: -1.0)
         ctx.translateBy(x: 0, y: -CGFloat(height))
-        UIGraphicsPushContext(ctx)
-        let color: UIColor = (risk == .critical) ? .systemRed : (risk == .medium ? .systemOrange : .systemGreen)
-        let text = "Score \(score)%  •  \(message)"
-        let attrs: [NSAttributedString.Key: Any] = [
-            .font: UIFont.systemFont(ofSize: 20, weight: .bold),
-            .foregroundColor: UIColor.white,
-            .backgroundColor: color.withAlphaComponent(0.7)
-        ]
-        (text as NSString).draw(at: CGPoint(x: 20, y: 20), withAttributes: attrs)
-        UIGraphicsPopContext()
+        
+        // 4. Stamp the text image onto the video
+        // (Drawing a top-left image into a bottom-left context naturally flips it upright!)
+        if let cgImage = textOverlayImage?.cgImage {
+            ctx.draw(cgImage, in: CGRect(origin: .zero, size: imageSize))
+        }
     }
-
     private func transformedSize(_ size: CGSize, _ transform: CGAffineTransform) -> CGSize {
         let s = size.applying(transform)
         return CGSize(width: abs(s.width), height: abs(s.height))
+    }
+
+    private func processOnMain(processor: PoseDetectionManager,
+                               landmarks: [NormalizedLandmark],
+                               timestampMS: Int) -> (depthProgress: Double,
+                                                     repCount: Int,
+                                                     lastRepScore: Int,
+                                                     feedbackMessage: String,
+                                                     risk: RiskLevel,
+                                                     overlayColors: OverlayColors) {
+        if Thread.isMainThread {
+            processor.processLandmarks(landmarks, timestampMS: timestampMS)
+            sessionSummary = processor.sessionSummary
+            return (processor.depthProgress,
+                    processor.repCount,
+                    processor.lastRepScore,
+                    processor.feedbackMessage,
+                    processor.currentRisk,
+                    processor.overlayColors)
+        }
+        
+        var result: (Double, Int, Int, String, RiskLevel, OverlayColors) = (0.0, 0, 0, "", .low, .neutral)
+        DispatchQueue.main.sync {
+            processor.processLandmarks(landmarks, timestampMS: timestampMS)
+            sessionSummary = processor.sessionSummary
+            result = (processor.depthProgress,
+                      processor.repCount,
+                      processor.lastRepScore,
+                      processor.feedbackMessage,
+                      processor.currentRisk,
+                      processor.overlayColors)
+        }
+        return (result.0, result.1, result.2, result.3, result.4, result.5)
+    }
+    
+    private func isEngagedForExercise(exercise: String, landmarks: [NormalizedLandmark]) -> Bool {
+        let normalized = exercise.lowercased()
+        if normalized.contains("pull") {
+            let leftWrist = landmarks[15]
+            let rightWrist = landmarks[16]
+            let leftShoulder = landmarks[11]
+            let rightShoulder = landmarks[12]
+            let wristsBelow = leftWrist.y > leftShoulder.y && rightWrist.y > rightShoulder.y
+            return !wristsBelow
+        }
+        return true
+    }
+    
+    private func colorFor(connection: (Int, Int), overlayColors: OverlayColors) -> UIColor {
+        switch connection {
+        case (11, 13), (13, 15):
+            return UIColor(overlayColors.leftArm)
+        case (12, 14), (14, 16):
+            return UIColor(overlayColors.rightArm)
+        case (11, 12), (11, 23), (12, 24), (23, 24):
+            return UIColor(overlayColors.torso)
+        case (23, 25), (25, 27):
+            return UIColor(overlayColors.leftLeg)
+        case (24, 26), (26, 28):
+            return UIColor(overlayColors.rightLeg)
+        default:
+            return UIColor.white.withAlphaComponent(0.6)
+        }
     }
 }

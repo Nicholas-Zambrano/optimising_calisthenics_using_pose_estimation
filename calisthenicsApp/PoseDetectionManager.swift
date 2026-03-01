@@ -311,9 +311,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
 
         case "Pull-Up":
             let output = engine.updatePullUp(
-                shoulder: landmarks[12],
-                elbow: landmarks[14],
-                wrist: landmarks[16],
+                landmarks: landmarks,
                 timestampMS: timestampMS
             )
             repCount = output.repCount

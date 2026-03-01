@@ -235,27 +235,27 @@ struct OfflineAnalysisView: View {
                                     }
                                     .buttonStyle(.plain)
                                 }
-                                
-                                if let selected = manager.repSummaries.first(where: { $0.id == selectedRepID }),
-                                   let snap = selected.snapshot {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("Selected Rep \(selected.repIndex)")
-                                            .font(.caption).bold()
-                                            .foregroundColor(palette.textSecondary)
-                                        Image(uiImage: snap)
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(height: 160)
-                                            .clipped()
-                                            .cornerRadius(12)
-                                        Text("\(selected.riskLabel): \(selected.primaryMessage)")
-                                            .font(.caption)
-                                            .foregroundColor(palette.textSecondary)
-                                    }
-                                    .padding(.top, 6)
-                                }
                             }
                             .padding(.top, 8)
+                        }
+
+                        if let selected = manager.repSummaries.first(where: { $0.id == selectedRepID }),
+                           let snap = selected.snapshot {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Selected Rep \(selected.repIndex)")
+                                    .font(.caption).bold()
+                                    .foregroundColor(palette.textSecondary)
+                                Image(uiImage: snap)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(height: 160)
+                                    .clipped()
+                                    .cornerRadius(12)
+                                Text("\(selected.riskLabel): \(selected.primaryMessage)")
+                                    .font(.caption)
+                                    .foregroundColor(palette.textSecondary)
+                            }
+                            .padding(.top, 6)
                         }
 
                     if !manager.logLines.isEmpty {
