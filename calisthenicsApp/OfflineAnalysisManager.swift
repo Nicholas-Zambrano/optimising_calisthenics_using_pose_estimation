@@ -5,6 +5,30 @@ import UIKit
 import Combine
 
 final class OfflineAnalysisManager: ObservableObject {
+    struct RepSummary: Identifiable {
+        let id = UUID()
+        let repIndex: Int
+        let timestampMS: Int
+        let score: Int
+        let primaryMessage: String
+        let risk: RiskLevel
+        let snapshot: UIImage?
+        
+        var timestampLabel: String {
+            let totalSec = max(0, timestampMS / 1000)
+            let minutes = totalSec / 60
+            let seconds = totalSec % 60
+            return String(format: "%d:%02d", minutes, seconds)
+        }
+        
+        var riskLabel: String {
+            switch risk {
+            case .critical: return "Critical"
+            case .medium: return "Important"
+            case .low: return "Minor"
+            }
+        }
+    }
     @Published var progress: Double = 0
     @Published var status: String = "Idle"
     @Published var isRunning: Bool = false
@@ -14,6 +38,9 @@ final class OfflineAnalysisManager: ObservableObject {
     @Published var worstSnapshot: UIImage?
     @Published var logLines: [String] = []
     @Published var mirrorOverlay: Bool = false
+    @Published var repSummaries: [RepSummary] = []
+
+    private let ciContext = CIContext()
     
     private var isCancelled = false
     private var bestScore: Int = -1
@@ -31,6 +58,7 @@ final class OfflineAnalysisManager: ObservableObject {
         worstSnapshot = nil
         bestScore = -1
         worstScore = 101
+        repSummaries = []
         status = "Preparing video..."
         logLines = []
         isRunning = true
@@ -47,9 +75,9 @@ final class OfflineAnalysisManager: ObservableObject {
             
             let durationSec = CMTimeGetSeconds(asset.duration)
             let naturalSize = track.naturalSize
-            let isPortrait = naturalSize.height >= naturalSize.width
             let preferredTransform = track.preferredTransform
-            let shouldMirror = self.isMirrored(preferredTransform)
+            let videoSize = self.transformedSize(naturalSize, preferredTransform)
+            let isPortrait = videoSize.height >= videoSize.width
             
             let reader: AVAssetReader
             do {
@@ -65,11 +93,19 @@ final class OfflineAnalysisManager: ObservableObject {
             let outputSettings: [String: Any] = [
                 kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
             ]
-            let output = AVAssetReaderTrackOutput(track: track, outputSettings: outputSettings)
+            let composition = AVMutableVideoComposition()
+            composition.renderSize = videoSize
+            composition.frameDuration = CMTime(value: 1, timescale: 30)
+            let instruction = AVMutableVideoCompositionInstruction()
+            instruction.timeRange = CMTimeRange(start: .zero, duration: asset.duration)
+            let layerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: track)
+            layerInstruction.setTransform(track.preferredTransform, at: .zero)
+            instruction.layerInstructions = [layerInstruction]
+            composition.instructions = [instruction]
+            let output = AVAssetReaderVideoCompositionOutput(videoTracks: [track], videoSettings: outputSettings)
+            output.videoComposition = composition
             output.alwaysCopiesSampleData = false
-            if reader.canAdd(output) {
-                reader.add(output)
-            }
+            if reader.canAdd(output) { reader.add(output) }
             
             let poseOptions = PoseLandmarkerOptions()
             if let modelPath = Bundle.main.path(forResource: "pose_landmarker_lite", ofType: "task") {
@@ -94,7 +130,6 @@ final class OfflineAnalysisManager: ObservableObject {
             processor.feedbackFocus = settings.focus
             processor.isCoachingActive = false
             processor.resetForNewSession(targetReps: settings.targetReps, sensitivity: settings.sensitivity)
-            self.mirrorOverlay = shouldMirror
             
             if !reader.startReading() {
                 DispatchQueue.main.async {
@@ -104,53 +139,98 @@ final class OfflineAnalysisManager: ObservableObject {
                 return
             }
             
+            DispatchQueue.main.async {
+                self.logLines.append("Offline analysis using video composition transform")
+                self.logLines.append("naturalSize=\(naturalSize.width)x\(naturalSize.height) videoSize=\(videoSize.width)x\(videoSize.height)")
+                self.logLines.append("transform=\(preferredTransform)")
+            }
+            
             var lastProcessedMS: Int = 0
-            let frameIntervalMS = 100
+            let frameIntervalMS = 150
             var lastRepCount = 0
+            var currentRepMaxDepth: Double = 0.0
+            var currentRepSnapshot: UIImage?
+            var lastLogMS: Int = 0
             
             DispatchQueue.main.async {
                 self.status = "Analyzing..."
                 self.logLines.append("Analysis started")
             }
             
+            let startWall = Date()
             while reader.status == .reading, !self.isCancelled {
                 guard let sampleBuffer = output.copyNextSampleBuffer() else { break }
-                let ts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
-                let tsMS = Int(CMTimeGetSeconds(ts) * 1000)
-                if tsMS - lastProcessedMS < frameIntervalMS { continue }
-                lastProcessedMS = tsMS
-                
-                guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { continue }
-                guard let image = try? MPImage(pixelBuffer: pixelBuffer, orientation: .up) else { continue }
-                if let result = try? poseLandmarker.detect(videoFrame: image, timestampInMilliseconds: tsMS),
-                   let landmarks = result.landmarks.first {
-                    DispatchQueue.main.async {
-                        processor.processLandmarks(landmarks, timestampMS: tsMS)
-                        self.sessionSummary = processor.sessionSummary
+                autoreleasepool {
+                    if Date().timeIntervalSince(startWall) > max(30.0, durationSec * 3.0) {
+                        reader.cancelReading()
+                        return
                     }
+                    let ts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+                    let tsMS = Int(CMTimeGetSeconds(ts) * 1000)
+                    if tsMS - lastProcessedMS < frameIntervalMS { return }
+                    lastProcessedMS = tsMS
                     
-                    if processor.repCount > lastRepCount {
-                        lastRepCount = processor.repCount
-                        if let frame = self.renderAnnotatedFrame(pixelBuffer: pixelBuffer, landmarks: landmarks) {
-                            let score = processor.lastRepScore
+                    guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+                    guard let image = try? MPImage(pixelBuffer: pixelBuffer, orientation: .up) else { return }
+                    if let result = try? poseLandmarker.detect(videoFrame: image, timestampInMilliseconds: tsMS),
+                       let landmarks = result.landmarks.first {
+                        if tsMS - lastLogMS >= 1000 {
+                            lastLogMS = tsMS
+                            let w = CVPixelBufferGetWidth(pixelBuffer)
+                            let h = CVPixelBufferGetHeight(pixelBuffer)
                             DispatchQueue.main.async {
-                                if score >= self.bestScore {
-                                    self.bestScore = score
-                                    self.bestSnapshot = frame
-                                }
-                                if score <= self.worstScore {
-                                    self.worstScore = score
-                                    self.worstSnapshot = frame
-                                }
+                                self.logLines.append("t=\(tsMS)ms buffer=\(w)x\(h) reps=\(processor.repCount)")
                             }
                         }
+                        DispatchQueue.main.async {
+                            processor.processLandmarks(landmarks, timestampMS: tsMS)
+                            self.sessionSummary = processor.sessionSummary
+                        }
+                        
+                        if processor.depthProgress >= currentRepMaxDepth && processor.depthProgress > 0.5 {
+                            currentRepMaxDepth = processor.depthProgress
+                            currentRepSnapshot = self.renderAnnotatedFrame(pixelBuffer: pixelBuffer,
+                                                                           landmarks: landmarks)
+                        }
+
+                        if processor.repCount > lastRepCount {
+                            lastRepCount = processor.repCount
+                            let frame = currentRepSnapshot ?? self.renderAnnotatedFrame(pixelBuffer: pixelBuffer,
+                                                                                        landmarks: landmarks)
+                            let summary = RepSummary(
+                                repIndex: processor.repCount,
+                                timestampMS: tsMS,
+                                score: processor.lastRepScore,
+                                primaryMessage: processor.feedbackMessage,
+                                risk: processor.currentRisk,
+                                snapshot: frame
+                            )
+                            DispatchQueue.main.async {
+                                self.repSummaries.append(summary)
+                            }
+                            if let frame = frame {
+                                let score = processor.lastRepScore
+                                DispatchQueue.main.async {
+                                    if score >= self.bestScore {
+                                        self.bestScore = score
+                                        self.bestSnapshot = frame
+                                    }
+                                    if score <= self.worstScore {
+                                        self.worstScore = score
+                                        self.worstSnapshot = frame
+                                    }
+                                }
+                            }
+                            currentRepMaxDepth = 0.0
+                            currentRepSnapshot = nil
+                        }
                     }
-                }
-                
-                let currentSec = CMTimeGetSeconds(ts)
-                let p = durationSec > 0 ? min(1.0, currentSec / durationSec) : 0
-                DispatchQueue.main.async {
-                    self.progress = p
+                    
+                    let currentSec = CMTimeGetSeconds(ts)
+                    let p = durationSec > 0 ? min(1.0, currentSec / durationSec) : 0
+                    DispatchQueue.main.async {
+                        self.progress = p
+                    }
                 }
             }
             
@@ -199,15 +279,23 @@ final class OfflineAnalysisManager: ObservableObject {
             let outputSettings: [String: Any] = [
                 kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
             ]
-            let output = AVAssetReaderTrackOutput(track: track, outputSettings: outputSettings)
+            let preferredTransform = track.preferredTransform
+            let videoSize = self.transformedSize(track.naturalSize, preferredTransform)
+            let width = Int(videoSize.width)
+            let height = Int(videoSize.height)
+            let composition = AVMutableVideoComposition()
+            composition.renderSize = videoSize
+            composition.frameDuration = CMTime(value: 1, timescale: 30)
+            let instruction = AVMutableVideoCompositionInstruction()
+            instruction.timeRange = CMTimeRange(start: .zero, duration: asset.duration)
+            let layerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: track)
+            layerInstruction.setTransform(track.preferredTransform, at: .zero)
+            instruction.layerInstructions = [layerInstruction]
+            composition.instructions = [instruction]
+            let output = AVAssetReaderVideoCompositionOutput(videoTracks: [track], videoSettings: outputSettings)
+            output.videoComposition = composition
             output.alwaysCopiesSampleData = false
             if reader.canAdd(output) { reader.add(output) }
-            
-            let naturalSize = track.naturalSize
-            let width = Int(naturalSize.width)
-            let height = Int(naturalSize.height)
-            let preferredTransform = track.preferredTransform
-            let shouldMirror = self.isMirrored(preferredTransform)
             
             let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("annotated_\(UUID().uuidString).mp4")
             if FileManager.default.fileExists(atPath: tempURL.path) {
@@ -264,12 +352,14 @@ final class OfflineAnalysisManager: ObservableObject {
             
             let processor = PoseDetectionManager()
             processor.activeExercise = exercise
-            processor.isPortraitMode = naturalSize.height >= naturalSize.width
+            processor.isPortraitMode = videoSize.height >= videoSize.width
             processor.sensitivity = settings.sensitivity
             processor.feedbackFocus = settings.focus
             processor.isCoachingActive = false
             processor.resetForNewSession(targetReps: settings.targetReps, sensitivity: settings.sensitivity)
-            self.mirrorOverlay = shouldMirror
+            DispatchQueue.main.async {
+                self.repSummaries = []
+            }
             
             if !reader.startReading() {
                 DispatchQueue.main.async {
@@ -280,34 +370,62 @@ final class OfflineAnalysisManager: ObservableObject {
                 return
             }
             
+            DispatchQueue.main.async {
+                self.logLines.append("Export using video composition transform")
+            }
+            
             writer.startWriting()
             writer.startSession(atSourceTime: .zero)
             
-            let frameIntervalMS = 100
+            let frameIntervalMS = 150
             var lastProcessedMS = 0
             
-            while reader.status == .reading && writerInput.isReadyForMoreMediaData && !self.isCancelled {
+            let startWall = Date()
+            while reader.status == .reading && !self.isCancelled {
+                if !writerInput.isReadyForMoreMediaData {
+                    usleep(2_000)
+                    continue
+                }
                 guard let sampleBuffer = output.copyNextSampleBuffer() else { break }
-                let ts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
-                let tsMS = Int(CMTimeGetSeconds(ts) * 1000)
-                if tsMS - lastProcessedMS < frameIntervalMS { continue }
-                lastProcessedMS = tsMS
-                
-                guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { continue }
-                guard let image = try? MPImage(pixelBuffer: pixelBuffer, orientation: .up) else { continue }
-                guard let result = try? poseLandmarker.detect(videoFrame: image, timestampInMilliseconds: tsMS),
-                      let landmarks = result.landmarks.first else { continue }
-                
-                processor.processLandmarks(landmarks, timestampMS: tsMS)
-                if let annotated = self.renderAnnotatedFrame(pixelBuffer: pixelBuffer, landmarks: landmarks),
-                   let outBuffer = self.makePixelBuffer(from: annotated, pool: adaptor.pixelBufferPool) {
-                    adaptor.append(outBuffer, withPresentationTime: ts)
+                autoreleasepool {
+                    if Date().timeIntervalSince(startWall) > max(30.0, CMTimeGetSeconds(asset.duration) * 3.0) {
+                        reader.cancelReading()
+                        return
+                    }
+                    let ts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+                    let tsMS = Int(CMTimeGetSeconds(ts) * 1000)
+                    if tsMS - lastProcessedMS < frameIntervalMS { return }
+                    lastProcessedMS = tsMS
+                    
+                    guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+                    guard let image = try? MPImage(pixelBuffer: pixelBuffer, orientation: .up) else { return }
+                    guard let result = try? poseLandmarker.detect(videoFrame: image, timestampInMilliseconds: tsMS),
+                          let landmarks = result.landmarks.first else { return }
+                    
+                    processor.processLandmarks(landmarks, timestampMS: tsMS)
+                    guard let pool = adaptor.pixelBufferPool else { return }
+                    let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
+                    if let outBuffer = self.makePixelBuffer(from: ciImage, pool: pool) {
+                        self.drawOverlay(on: outBuffer,
+                                         landmarks: landmarks,
+                                         message: processor.feedbackMessage,
+                                         score: processor.lastRepScore,
+                                         risk: processor.currentRisk)
+                        adaptor.append(outBuffer, withPresentationTime: ts)
+                    }
                 }
             }
             
             writerInput.markAsFinished()
             writer.finishWriting {
                 DispatchQueue.main.async {
+                    if reader.status == .failed {
+                        self.status = "Export failed: reader error"
+                        self.logLines.append("Export failed: reader error")
+                    } else if writer.status == .failed {
+                        self.status = "Export failed: writer error"
+                        self.logLines.append("Export failed: writer error")
+                    }
                     self.isExporting = false
                     self.status = "Export complete"
                     self.logLines.append("Export complete")
@@ -317,23 +435,104 @@ final class OfflineAnalysisManager: ObservableObject {
         }
     }
 
-    private func isMirrored(_ transform: CGAffineTransform) -> Bool {
-        let det = transform.a * transform.d - transform.b * transform.c
-        return det < 0
-    }
     
     private func renderAnnotatedFrame(pixelBuffer: CVPixelBuffer, landmarks: [NormalizedLandmark]) -> UIImage? {
         let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
-        let context = CIContext()
-        guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else { return nil }
-        let imageSize = CGSize(width: cgImage.width, height: cgImage.height)
+        let extent = ciImage.extent.integral
+        guard let cgImage = ciContext.createCGImage(ciImage, from: extent) else { return nil }
+        
+        let videoImage = UIImage(cgImage: cgImage)
+        let imageSize = videoImage.size
         
         UIGraphicsBeginImageContextWithOptions(imageSize, true, 1.0)
+        
+        videoImage.draw(in: CGRect(origin: .zero, size: imageSize))
+        
         guard let ctx = UIGraphicsGetCurrentContext() else { return nil }
-        ctx.draw(cgImage, in: CGRect(origin: .zero, size: imageSize))
+        ctx.setStrokeColor(UIColor.systemGreen.cgColor)
+        ctx.setLineWidth(5.0)
+        
+        let points = landmarks.map { landmark -> CGPoint in
+            let x = CGFloat(landmark.x) * imageSize.width
+            let y = CGFloat(landmark.y) * imageSize.height
+            if mirrorOverlay {
+                return CGPoint(x: imageSize.width - x, y: y)
+            }
+            return CGPoint(x: x, y: y)
+        }
+        
+        let connections: [(Int, Int)] = [
+            (11, 13), (13, 15), (12, 14), (14, 16),
+            (11, 12), (11, 23), (12, 24), (23, 24),
+            (23, 25), (25, 27), (24, 26), (26, 28)
+        ]
+        for (a, b) in connections {
+            guard a < points.count, b < points.count else { continue }
+            ctx.move(to: points[a])
+            ctx.addLine(to: points[b])
+            ctx.strokePath()
+        }
+        
+        let result = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        return result
+    }
+
+    private func makePixelBuffer(from image: UIImage, pool: CVPixelBufferPool?) -> CVPixelBuffer? {
+        guard let pool = pool else { return nil }
+        var pixelBuffer: CVPixelBuffer?
+        CVPixelBufferPoolCreatePixelBuffer(nil, pool, &pixelBuffer)
+        guard let buffer = pixelBuffer else { return nil }
+        
+        guard let ciImage = CIImage(image: image) else { return nil }
+        let width = CVPixelBufferGetWidth(buffer)
+        let height = CVPixelBufferGetHeight(buffer)
+        let rect = CGRect(x: 0, y: 0, width: width, height: height)
+        ciContext.render(ciImage, to: buffer, bounds: rect, colorSpace: CGColorSpaceCreateDeviceRGB())
+        return buffer
+    }
+
+    private func makePixelBuffer(from ciImage: CIImage, pool: CVPixelBufferPool?) -> CVPixelBuffer? {
+        guard let pool = pool else { return nil }
+        var pixelBuffer: CVPixelBuffer?
+        CVPixelBufferPoolCreatePixelBuffer(nil, pool, &pixelBuffer)
+        guard let buffer = pixelBuffer else { return nil }
+        let width = CVPixelBufferGetWidth(buffer)
+        let height = CVPixelBufferGetHeight(buffer)
+        let rect = CGRect(x: 0, y: 0, width: width, height: height)
+        ciContext.render(ciImage, to: buffer, bounds: rect, colorSpace: CGColorSpaceCreateDeviceRGB())
+        return buffer
+    }
+    private func drawOverlay(on pixelBuffer: CVPixelBuffer,
+                             landmarks: [NormalizedLandmark],
+                             message: String,
+                             score: Int,
+                             risk: RiskLevel) {
+        CVPixelBufferLockBaseAddress(pixelBuffer, [])
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, []) }
+
+        let width = CVPixelBufferGetWidth(pixelBuffer)
+        let height = CVPixelBufferGetHeight(pixelBuffer)
+        guard let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) else { return }
+
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let bitmapInfo = CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
+        guard let ctx = CGContext(
+            data: baseAddress,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: CVPixelBufferGetBytesPerRow(pixelBuffer),
+            space: colorSpace,
+            bitmapInfo: bitmapInfo
+        ) else { return }
+
+        ctx.translateBy(x: 0, y: CGFloat(height))
+        ctx.scaleBy(x: 1.0, y: -1.0)
         ctx.setStrokeColor(UIColor.systemGreen.cgColor)
         ctx.setLineWidth(3.0)
-        
+
+        let imageSize = CGSize(width: width, height: height)
         let points = landmarks.map { landmark -> CGPoint in
             let x = CGFloat(landmark.x) * imageSize.width
             let y = CGFloat(landmark.y) * imageSize.height
@@ -356,32 +555,23 @@ final class OfflineAnalysisManager: ObservableObject {
             ctx.addLine(to: points[b])
             ctx.strokePath()
         }
-        
-        let result = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-        return result
+
+        ctx.scaleBy(x: 1.0, y: -1.0)
+        ctx.translateBy(x: 0, y: -CGFloat(height))
+        UIGraphicsPushContext(ctx)
+        let color: UIColor = (risk == .critical) ? .systemRed : (risk == .medium ? .systemOrange : .systemGreen)
+        let text = "Score \(score)%  •  \(message)"
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 20, weight: .bold),
+            .foregroundColor: UIColor.white,
+            .backgroundColor: color.withAlphaComponent(0.7)
+        ]
+        (text as NSString).draw(at: CGPoint(x: 20, y: 20), withAttributes: attrs)
+        UIGraphicsPopContext()
     }
 
-    private func makePixelBuffer(from image: UIImage, pool: CVPixelBufferPool?) -> CVPixelBuffer? {
-        guard let pool = pool else { return nil }
-        var pixelBuffer: CVPixelBuffer?
-        CVPixelBufferPoolCreatePixelBuffer(nil, pool, &pixelBuffer)
-        guard let buffer = pixelBuffer else { return nil }
-        
-        CVPixelBufferLockBaseAddress(buffer, [])
-        let context = CGContext(
-            data: CVPixelBufferGetBaseAddress(buffer),
-            width: Int(image.size.width),
-            height: Int(image.size.height),
-            bitsPerComponent: 8,
-            bytesPerRow: CVPixelBufferGetBytesPerRow(buffer),
-            space: CGColorSpaceCreateDeviceRGB(),
-            bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue
-        )
-        if let cgImage = image.cgImage {
-            context?.draw(cgImage, in: CGRect(origin: .zero, size: image.size))
-        }
-        CVPixelBufferUnlockBaseAddress(buffer, [])
-        return buffer
+    private func transformedSize(_ size: CGSize, _ transform: CGAffineTransform) -> CGSize {
+        let s = size.applying(transform)
+        return CGSize(width: abs(s.width), height: abs(s.height))
     }
 }

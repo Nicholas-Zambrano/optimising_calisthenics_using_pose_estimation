@@ -1,6 +1,6 @@
 {
   "chinOverBarAngle": 65,
-  "bottomAngle": 160,
+  "bottomAngle": 135,
   "asymmetryAngleDiff": 15,
   "tempoMinSec": 0.6,
   "feedbackRules": [
@@ -33,4 +33,3 @@
     }
   ]
 }
-
