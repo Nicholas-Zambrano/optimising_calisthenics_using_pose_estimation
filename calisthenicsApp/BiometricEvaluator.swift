@@ -24,6 +24,12 @@ enum PushUpPostureMode {
     case none, side, front
 }
 
+enum SquatViewMode: String, CaseIterable {
+    case auto = "Auto"
+    case front = "Front"
+    case side = "Side"
+}
+
 struct PushUpMetrics {
     let backAngle: Double
     let elbowFlexion: Double

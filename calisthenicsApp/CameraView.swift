@@ -17,9 +17,16 @@ struct CameraView: UIViewRepresentable {
         let previewLayer = AVCaptureVideoPreviewLayer(session: session)
         previewLayer.videoGravity = .resizeAspectFill
         previewLayer.frame = view.layer.bounds
-        if let connection = previewLayer.connection, connection.isVideoMirroringSupported {
-            connection.automaticallyAdjustsVideoMirroring = false
-            connection.isVideoMirrored = isMirrored
+        if let connection = previewLayer.connection {
+            if connection.isVideoOrientationSupported {
+                connection.videoOrientation = .portrait
+            } else if connection.isVideoRotationAngleSupported(90) {
+                connection.videoRotationAngle = 90
+            }
+            if connection.isVideoMirroringSupported {
+                connection.automaticallyAdjustsVideoMirroring = false
+                connection.isVideoMirrored = isMirrored
+            }
         }
         view.layer.addSublayer(previewLayer)
         return view
@@ -28,9 +35,16 @@ struct CameraView: UIViewRepresentable {
     func updateUIView(_ uiView: UIView, context: Context) {
         guard let previewLayer = uiView.layer.sublayers?.first as? AVCaptureVideoPreviewLayer else { return }
         previewLayer.frame = uiView.bounds
-        if let connection = previewLayer.connection, connection.isVideoMirroringSupported {
-            connection.automaticallyAdjustsVideoMirroring = false
-            connection.isVideoMirrored = isMirrored
+        if let connection = previewLayer.connection {
+            if connection.isVideoOrientationSupported {
+                connection.videoOrientation = .portrait
+            } else if connection.isVideoRotationAngleSupported(90) {
+                connection.videoRotationAngle = 90
+            }
+            if connection.isVideoMirroringSupported {
+                connection.automaticallyAdjustsVideoMirroring = false
+                connection.isVideoMirrored = isMirrored
+            }
         }
     }
 }

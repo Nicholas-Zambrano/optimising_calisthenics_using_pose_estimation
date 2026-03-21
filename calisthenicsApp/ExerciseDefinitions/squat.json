@@ -7,11 +7,11 @@
     {
       "id": "knees_caving",
       "severity": "important",
-      "message": "Keep knees tr acking over feet",
+      "message": "Keep knees tracking over feet",
       "metric": "kneeValgus",
       "op": "gt",
       "threshold": 0.15,
-      "appliesIn": ["squat"]
+      "appliesIn": ["squat", "front"]
     },
     {
       "id": "leaning_forward",
@@ -20,7 +20,7 @@
       "metric": "forwardLean",
       "op": "gt",
       "threshold": 0.35,
-      "appliesIn": ["squat"]
+      "appliesIn": ["squat", "side"]
     },
     {
       "id": "not_deep_enough",
@@ -60,4 +60,3 @@
     }
   ]
 }
-

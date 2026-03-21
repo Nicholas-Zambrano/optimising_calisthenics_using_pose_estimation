@@ -16,6 +16,7 @@ struct ExerciseSessionView: View {
     let focus: FeedbackFocus
     let audioEnabled: Bool
     let useFrontCamera: Bool
+    let squatViewMode: SquatViewMode
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var historyStore: WorkoutHistoryStore
     @EnvironmentObject private var settings: AppSettings
@@ -114,6 +115,8 @@ struct ExerciseSessionView: View {
                         .frame(width: 180)
                     }
                     .padding(.top, 8)
+
+                    
                 }
 
                 Spacer()
@@ -136,7 +139,7 @@ struct ExerciseSessionView: View {
                 }
             }
             
-            if !isCountingDown && !poseManager.isSessionComplete && !poseManager.debugText.isEmpty {
+            if settings.debugEnabled && !isCountingDown && !poseManager.isSessionComplete && !poseManager.debugText.isEmpty {
                 VStack {
                     HStack {
                         Text(poseManager.debugText)
@@ -151,6 +154,45 @@ struct ExerciseSessionView: View {
                 }
                 .padding(.top, 100)
                 .padding(.horizontal, 16)
+            }
+
+            if settings.debugEnabled && selectedExercise == "Squat" && !poseManager.repMetrics.isEmpty && !isCountingDown {
+                VStack {
+                    Spacer()
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Rep Timeline")
+                            .font(.caption.bold())
+                            .foregroundColor(palette.textPrimary)
+                        ForEach(poseManager.repMetrics) { rep in
+                            HStack(spacing: 8) {
+                                Text("#\(rep.repIndex)")
+                                    .font(.caption2.bold())
+                                    .frame(width: 28, alignment: .leading)
+                                Text("\(rep.score)%")
+                                    .font(.caption2)
+                                    .frame(width: 40, alignment: .leading)
+                                if let valgus = rep.kneeValgus {
+                                    Text(String(format: "valgus %.2f", valgus))
+                                        .font(.caption2)
+                                }
+                                if let lean = rep.forwardLean {
+                                    Text(String(format: "lean %.2f", lean))
+                                        .font(.caption2)
+                                }
+                                Spacer()
+                                Text(rep.primaryMessage)
+                                    .font(.caption2)
+                                    .lineLimit(1)
+                                    .foregroundColor(palette.textSecondary)
+                            }
+                        }
+                    }
+                    .padding(10)
+                    .background(palette.cardAlt.opacity(0.9))
+                    .cornerRadius(10)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 20)
+                }
             }
 
             if poseManager.isSessionComplete, let summary = poseManager.sessionSummary {
@@ -208,10 +250,19 @@ struct ExerciseSessionView: View {
             poseManager.isFrontCamera = useFrontCamera
             poseManager.isPortraitMode = geo.size.height >= geo.size.width
             poseManager.isCoachingActive = audioEnabled
+            poseManager.debugEnabled = settings.debugEnabled
+            if selectedExercise == "Squat" {
+                poseManager.squatViewMode = squatViewMode
+            } else {
+                poseManager.squatViewMode = .auto
+            }
             startSequence()
         }
             .onChange(of: geo.size) { newSize in
                 poseManager.isPortraitMode = newSize.height >= newSize.width
+            }
+            .onChange(of: settings.debugEnabled) { value in
+                poseManager.debugEnabled = value
             }
         }
         .onDisappear {

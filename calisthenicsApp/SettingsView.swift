@@ -22,6 +22,10 @@ struct SettingsView: View {
                     Toggle("Audio Feedback", isOn: $settings.audioEnabled)
                 }
                 
+                Section(header: Text("Debug")) {
+                    Toggle("Show Debug Metrics", isOn: $settings.debugEnabled)
+                }
+                
                 Section(header: Text("Targets")) {
                     Stepper(value: $settings.targetReps, in: 5...50, step: 1) {
                         Text("Target Reps: \(settings.targetReps)")

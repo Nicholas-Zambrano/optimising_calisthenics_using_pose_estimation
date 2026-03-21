@@ -25,6 +25,7 @@ struct MainMenuView: View {
     @State private var selectedSensitivity: FeedbackSensitivity = .normal
     @State private var selectedFocus: FeedbackFocus = .armsOnly
     @State private var useFrontCamera: Bool = false
+    @State private var selectedSquatViewMode: SquatViewMode = .auto
     
     var body: some View {
         let palette = Theme.palette(choice: settings.themeChoice, darkMode: settings.darkMode)
@@ -74,7 +75,8 @@ struct MainMenuView: View {
                     sensitivity: selectedSensitivity,
                     focus: selectedFocus,
                     audioEnabled: settings.audioEnabled,
-                    useFrontCamera: useFrontCamera
+                    useFrontCamera: useFrontCamera,
+                    squatViewMode: selectedSquatViewMode
                 ),
                 isActive: $navigateToSession
             ) { EmptyView() }
@@ -106,13 +108,25 @@ struct MainMenuView: View {
             .pickerStyle(.segmented)
             .padding(.horizontal)
             
-            Picker("Focus", selection: $selectedFocus) {
-                ForEach(FeedbackFocus.allCases, id: \.self) { mode in
-                    Text(mode.rawValue).tag(mode)
+            if selectedExercise == "Push-Up" {
+                Picker("Focus", selection: $selectedFocus) {
+                    ForEach(FeedbackFocus.allCases, id: \.self) { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
                 }
+                .pickerStyle(.segmented)
+                .padding(.horizontal)
             }
-            .pickerStyle(.segmented)
-            .padding(.horizontal)
+            
+            if selectedExercise == "Squat" {
+                Picker("View Mode", selection: $selectedSquatViewMode) {
+                    ForEach(SquatViewMode.allCases, id: \.self) { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal)
+            }
 
             Picker("Camera", selection: $useFrontCamera) {
                 Text("Back").tag(false)

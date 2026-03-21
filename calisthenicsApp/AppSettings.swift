@@ -20,6 +20,9 @@ final class AppSettings: ObservableObject {
     @Published var darkMode: Bool {
         didSet { UserDefaults.standard.set(darkMode, forKey: "darkMode") }
     }
+    @Published var debugEnabled: Bool {
+        didSet { UserDefaults.standard.set(debugEnabled, forKey: "debugEnabled") }
+    }
     
     init() {
         if UserDefaults.standard.object(forKey: "audioEnabled") == nil {
@@ -39,6 +42,11 @@ final class AppSettings: ObservableObject {
             self.darkMode = true
         } else {
             self.darkMode = UserDefaults.standard.bool(forKey: "darkMode")
+        }
+        if UserDefaults.standard.object(forKey: "debugEnabled") == nil {
+            self.debugEnabled = false
+        } else {
+            self.debugEnabled = UserDefaults.standard.bool(forKey: "debugEnabled")
         }
     }
 }

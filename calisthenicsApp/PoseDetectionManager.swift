@@ -30,6 +30,12 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
     @Published var lastRepScore: Int = 0
     @Published var isPortraitMode: Bool = true
     @Published var feedbackFocus: FeedbackFocus = .armsOnly
+    @Published var debugEnabled: Bool = false
+    @Published var repMetrics: [RepMetric] = []
+
+    private let sessionQueue = DispatchQueue(label: "com.calisthenics.sessionQueue")
+    private let videoQueue = DispatchQueue(label: "com.calisthenics.videoQueue")
+    @Published var squatViewMode: SquatViewMode = .auto
     
     var isProcessingFrame = false
     
@@ -46,10 +52,9 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
     private let synthesizer = AVSpeechSynthesizer()
     private var lastSpokenMessage = ""
 
-    private let enablePoseDebugLogs = true
     private var lastPoseMode: PushUpPostureMode = .none
     private var lastPoseModeTimestampMS: Int?
-
+    
     private func chooseBestSide(landmarks: [NormalizedLandmark]) -> (shoulder: NormalizedLandmark, elbow: NormalizedLandmark, wrist: NormalizedLandmark, hip: NormalizedLandmark, knee: NormalizedLandmark, ankle: NormalizedLandmark) {
         let left = (landmarks[11], landmarks[13], landmarks[15], landmarks[23], landmarks[25], landmarks[27])
         let right = (landmarks[12], landmarks[14], landmarks[16], landmarks[24], landmarks[26], landmarks[28])
@@ -90,6 +95,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
         overlayColors = .neutral
         isDetectionPaused = false
         secondaryHint = ""
+        repMetrics = []
         engine.reset(targetReps: targetReps, sensitivity: sensitivity, focus: feedbackFocus, isPortraitMode: isPortraitMode)
     }
     
@@ -105,9 +111,9 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
     
     private func endSession() {
         isDetectionPaused = true
-        DispatchQueue.global(qos: .userInitiated).async {
-            if self.session.isRunning {
-                self.session.stopRunning()
+        sessionQueue.async { [weak self] in
+            if self?.session.isRunning == true {
+                self?.session.stopRunning()
             }
         }
     }
@@ -115,9 +121,9 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
     func stopSession() {
         isCoachingActive = false
         isDetectionPaused = true
-        DispatchQueue.global(qos: .userInitiated).async {
-            if self.session.isRunning {
-                self.session.stopRunning()
+        sessionQueue.async { [weak self] in
+            if self?.session.isRunning == true {
+                self?.session.stopRunning()
             }
         }
         if synthesizer.isSpeaking {
@@ -237,7 +243,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
                 anklesVisible: anklesVisible,
                 armsVisible: armsVisible
             )
-            if enablePoseDebugLogs {
+            if debugEnabled {
                 if !armsVisible {
                     self.debugText = "Arms not visible — move closer"
                 }
@@ -256,7 +262,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
                 isPortraitMode: self.isPortraitMode,
                 sensitivity: self.sensitivity,
                 feedbackFocus: self.feedbackFocus,
-                enableDebug: enablePoseDebugLogs
+                enableDebug: debugEnabled
             )
             
             repCount = output.repCount
@@ -275,26 +281,20 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
             if let speak = output.speakMessage, isCoachingActive {
                 speakFeedback(speak, force: true)
             }
+            if let metric = output.repMetric {
+                repMetrics.append(metric)
+            }
             
             if isSessionComplete {
                 endSession()
             }
 
         case "Squat":
-            let leftHip = landmarks[23]
-            let rightHip = landmarks[24]
-            let leftShoulder = landmarks[11]
-            let rightShoulder = landmarks[12]
-            let hipWidth = max(0.001, abs(Double(leftHip.x - rightHip.x)))
-            let torsoLength = max(0.001, sqrt(pow(Double(rightShoulder.x - rightHip.x), 2) + pow(Double(rightShoulder.y - rightHip.y), 2)))
             let output = engine.updateSquat(
-                shoulder: rightShoulder,
-                hip: rightHip,
-                knee: landmarks[26],
-                ankle: landmarks[28],
-                hipWidth: hipWidth,
-                torsoLength: torsoLength,
-                timestampMS: timestampMS
+                landmarks: landmarks,
+                timestampMS: timestampMS,
+                enableDebug: debugEnabled,
+                viewMode: squatViewMode
             )
             repCount = output.repCount
             cleanReps = output.cleanReps
@@ -308,6 +308,10 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
             isSessionComplete = output.isSessionComplete
             sessionSummary = output.sessionSummary
             debugText = output.debugText
+            
+            if let speak = output.speakMessage, isCoachingActive {
+                speakFeedback(speak, force: true)
+            }
 
         case "Pull-Up":
             let output = engine.updatePullUp(
@@ -358,57 +362,134 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
     }
     
     func toggleCamera() {
-        cameraPosition = (cameraPosition == .back) ? .front : .back
-        isFrontCamera = (cameraPosition == .front)
-        isDetectionPaused = true
-        latestLandmarks = nil
-        repCount = 0
-        cleanReps = 0
-        overallScore = 0
-        lastRepScore = 0
-        depthProgress = 0
-        overlayColors = .neutral
-        secondaryHint = ""
-        feedbackMessage = "Get into push-up position"
-        currentRisk = .low
-        engine.reset(targetReps: targetReps, sensitivity: sensitivity, focus: feedbackFocus, isPortraitMode: isPortraitMode)
-        DispatchQueue.global(qos: .userInitiated).async {
-            self.session.stopRunning()
-            self.startCamera()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                self.isDetectionPaused = false
+        DispatchQueue.main.async {
+            self.cameraPosition = (self.cameraPosition == .back) ? .front : .back
+            self.isFrontCamera = (self.cameraPosition == .front)
+            self.isDetectionPaused = true
+            self.latestLandmarks = nil
+            self.repCount = 0
+            self.cleanReps = 0
+            self.overallScore = 0
+            self.lastRepScore = 0
+            self.depthProgress = 0
+            self.overlayColors = .neutral
+            self.secondaryHint = ""
+            self.feedbackMessage = "Get into position"
+            self.currentRisk = .low
+            self.engine.reset(targetReps: self.targetReps, sensitivity: self.sensitivity, focus: self.feedbackFocus, isPortraitMode: self.isPortraitMode)
+            
+            self.sessionQueue.async { [weak self] in
+                guard let self = self else { return }
+                if self.session.isRunning {
+                    self.session.stopRunning()
+                }
+                self.startCamera()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    self.isDetectionPaused = false
+                }
             }
         }
     }
 
+//    private func startCamera() {
+//        sessionQueue.async { [weak self] in
+//            guard let self = self else { return }
+//            if self.session.isRunning { self.session.stopRunning() }
+//            self.session.beginConfiguration()
+//            
+//            // 1. Clear old inputs/outputs
+//            self.session.inputs.forEach { self.session.removeInput($0) }
+//            self.session.outputs.forEach { self.session.removeOutput($0) }
+//            
+//            let position: AVCaptureDevice.Position = self.isFrontCamera ? .front : .back
+//            guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: position),
+//                  let videoInput = try? AVCaptureDeviceInput(device: videoDevice) else {
+//                print("[Camera] Failed to access camera")
+//                self.session.commitConfiguration()
+//                return
+//            }
+//            
+//            // 2. Add input first
+//            if self.session.canAddInput(videoInput) { self.session.addInput(videoInput) }
+//            
+//            // 3. Then set resolution
+//            if self.session.canSetSessionPreset(.hd1280x720) {
+//                self.session.sessionPreset = .hd1280x720
+//            } else {
+//                self.session.sessionPreset = .high
+//            }
+//            
+//            // 4. Add output
+//            let videoOutput = AVCaptureVideoDataOutput()
+//            videoOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
+//            videoOutput.alwaysDiscardsLateVideoFrames = true
+//            videoOutput.setSampleBufferDelegate(self, queue: self.videoQueue)
+//            
+//            if self.session.canAddOutput(videoOutput) {
+//                self.session.addOutput(videoOutput)
+//                if let connection = videoOutput.connection(with: .video) {
+//                    if connection.isVideoOrientationSupported {
+//                        connection.videoOrientation = .portrait
+//                    }
+//                    if connection.isVideoMirroringSupported {
+//                        connection.isVideoMirrored = self.isFrontCamera
+//                    }
+//                }
+//            }
+//            
+//            self.session.commitConfiguration()
+//            if !self.session.isRunning { self.session.startRunning() }
+//        }
+//    }
+
     private func startCamera() {
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+        sessionQueue.async { [weak self] in
             guard let self = self else { return }
+            if self.session.isRunning { self.session.stopRunning() }
             self.session.beginConfiguration()
-            self.session.inputs.forEach { self.session.removeInput($0) }
             
-            guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: self.cameraPosition),
-                  let videoInput = try? AVCaptureDeviceInput(device: videoDevice),
-                  self.session.canAddInput(videoInput) else { return }
-            self.session.addInput(videoInput)
-            self.isFrontCamera = (self.cameraPosition == .front)
+            self.session.inputs.forEach { self.session.removeInput($0) }
+            self.session.outputs.forEach { self.session.removeOutput($0) }
+            
+            let position: AVCaptureDevice.Position = self.isFrontCamera ? .front : .back
+            guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: position),
+                  let videoInput = try? AVCaptureDeviceInput(device: videoDevice) else {
+                print("[Camera] Failed to access camera")
+                self.session.commitConfiguration()
+                return
+            }
+            
+            if self.session.canAddInput(videoInput) { self.session.addInput(videoInput) }
             
             let videoOutput = AVCaptureVideoDataOutput()
             videoOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
-            videoOutput.setSampleBufferDelegate(self, queue: DispatchQueue(label: "videoQueue"))
+            videoOutput.alwaysDiscardsLateVideoFrames = true
+            videoOutput.setSampleBufferDelegate(self, queue: self.videoQueue)
             
             if self.session.canAddOutput(videoOutput) {
                 self.session.addOutput(videoOutput)
-                if let connection = videoOutput.connection(with: .video), connection.isVideoRotationAngleSupported(90) {
-                    connection.videoRotationAngle = 90
-                    if connection.isVideoMirroringSupported { connection.isVideoMirrored = false }
+                
+                // This is the critical fix from your old commit
+                if let connection = videoOutput.connection(with: .video) {
+                    // Using rotation angle is often more stable for MediaPipe streams
+                    if connection.isVideoRotationAngleSupported(90) {
+                        connection.videoRotationAngle = 90
+                    } else if connection.isVideoOrientationSupported {
+                        connection.videoOrientation = .portrait
+                    }
+                    
+                    if connection.isVideoMirroringSupported {
+                        connection.isVideoMirrored = self.isFrontCamera
+                    }
                 }
             }
+            
             self.session.commitConfiguration()
             if !self.session.isRunning { self.session.startRunning() }
         }
     }
-
+    
+    
     private func setupLandmarker() {
         guard let modelPath = Bundle.main.path(forResource: "pose_landmarker_lite", ofType: "task") else { return }
         let options = PoseLandmarkerOptions()
@@ -436,13 +517,20 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
 
 extension PoseDetectionManager: AVCaptureVideoDataOutputSampleBufferDelegate {
     nonisolated func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        guard !isProcessingFrame, !isDetectionPaused, !isSessionComplete else { return }
-        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
-        let timestampInMS = Int(CMTimeGetSeconds(CMSampleBufferGetPresentationTimeStamp(sampleBuffer)) * 1000)
-        
-        if let image = try? MPImage(pixelBuffer: pixelBuffer, orientation: .up) {
-            isProcessingFrame = true
-            try? self.poseLandmarker?.detectAsync(image: image, timestampInMilliseconds: timestampInMS)
+        autoreleasepool {
+            guard !isProcessingFrame, !isDetectionPaused, !isSessionComplete else { return }
+            guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+            let timestampInMS = Int(CMTimeGetSeconds(CMSampleBufferGetPresentationTimeStamp(sampleBuffer)) * 1000)
+            
+            if let image = try? MPImage(pixelBuffer: pixelBuffer, orientation: .up) {
+                isProcessingFrame = true
+                do {
+                    try self.poseLandmarker?.detectAsync(image: image, timestampInMilliseconds: timestampInMS)
+                } catch {
+                    isProcessingFrame = false
+                    print("MediaPipe Error: \(error)")
+                }
+            }
         }
     }
 }

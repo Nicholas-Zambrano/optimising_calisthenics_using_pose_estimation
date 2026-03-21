@@ -105,6 +105,18 @@ struct OverlayColors {
     )
 }
 
+struct RepMetric: Identifiable {
+    let id = UUID()
+    let repIndex: Int
+    let timestampMS: Int
+    let score: Int
+    let primaryMessage: String
+    let risk: RiskLevel
+    let depthProgress: Double
+    let kneeValgus: Double?
+    let forwardLean: Double?
+}
+
 struct FrontViewMetrics {
     let hipDropRatio: Double
     let hipRiseRatio: Double

@@ -16,6 +16,7 @@ struct EngineOutput {
     let sessionSummary: SessionSummary?
     let debugText: String
     let speakMessage: String?
+    let repMetric: RepMetric?
 }
 
 final class ExerciseEngine {
@@ -88,6 +89,16 @@ final class ExerciseEngine {
     private var squatState: String = "UP"
     private var squatRepMinAngle: Double = 999
     private var squatRepStartMS: Int?
+    private var squatRepMaxKneeValgus: Double = 0
+    private var squatRepMaxForwardLean: Double = 0
+    private var squatCalibratedMinAngle: Double?
+    private var squatCalibrationRepCount = 0
+    private var squatCalibrationMinAngleSum: Double = 0
+    private var squatAngleWindow: [Double] = []
+    private var squatValgusWindow: [Double] = []
+    private var squatLeanWindow: [Double] = []
+    private let squatSmoothingWindow = 3
+    private var lastSquatLogMS: Int = 0
 
     private var pullUpState: String = "DOWN"
     private var pullUpRepMinAngle: Double = 999
@@ -167,6 +178,15 @@ final class ExerciseEngine {
         squatState = "UP"
         squatRepMinAngle = 999
         squatRepStartMS = nil
+        squatRepMaxKneeValgus = 0
+        squatRepMaxForwardLean = 0
+        squatCalibratedMinAngle = nil
+        squatCalibrationRepCount = 0
+        squatCalibrationMinAngleSum = 0
+        squatAngleWindow.removeAll()
+        squatValgusWindow.removeAll()
+        squatLeanWindow.removeAll()
+        lastSquatLogMS = 0
         pullUpState = "DOWN"
         pullUpRepMinAngle = 999
         pullUpRepStartMS = nil
@@ -223,7 +243,8 @@ final class ExerciseEngine {
                 isSessionComplete: isSessionComplete,
                 sessionSummary: sessionSummary,
                 debugText: debugText,
-                speakMessage: nil
+                speakMessage: nil,
+                repMetric: nil
             )
         }
         
@@ -295,76 +316,223 @@ final class ExerciseEngine {
             isSessionComplete: isSessionComplete,
             sessionSummary: sessionSummary,
             debugText: debugText,
-            speakMessage: speakMessage
+            speakMessage: speakMessage,
+            repMetric: nil
         )
     }
 
-    func updateSquat(shoulder: NormalizedLandmark,
-                     hip: NormalizedLandmark,
-                     knee: NormalizedLandmark,
-                     ankle: NormalizedLandmark,
-                     hipWidth: Double,
-                     torsoLength: Double,
-                     timestampMS: Int) -> EngineOutput {
-        let hipVis = hip.visibility?.floatValue ?? 0
-        let kneeVis = knee.visibility?.floatValue ?? 0
-        let ankleVis = ankle.visibility?.floatValue ?? 0
-        let bodyVisible = min(hipVis, kneeVis, ankleVis) >= 0.4
+    func updateSquat(landmarks: [NormalizedLandmark],
+                     timestampMS: Int,
+                     enableDebug: Bool,
+                     viewMode: SquatViewMode) -> EngineOutput {
+        lastTimestampMS = timestampMS
+        debugEnabled = enableDebug
+        var speakMessage: String?
+        var repMetric: RepMetric?
+        var matchedForScore: [FeedbackRule] = []
+        let leftShoulder = landmarks[11]
+        let rightShoulder = landmarks[12]
+        let leftHip = landmarks[23]
+        let rightHip = landmarks[24]
+        let leftKnee = landmarks[25]
+        let rightKnee = landmarks[26]
+        let leftAnkle = landmarks[27]
+        let rightAnkle = landmarks[28]
 
-        let angle = evaluator.calculateAngle(p1: hip, p2: knee, p3: ankle)
-        depthProgress = depthProgressFor(currentAngle: angle, minAngle: squatConfig.depthThreshold, maxAngle: squatConfig.lockoutAngle)
+        let shoulderWidth = max(0.001, abs(Double(leftShoulder.x - rightShoulder.x)))
+        let hipWidth = max(0.001, abs(Double(leftHip.x - rightHip.x)))
+        let shoulderToHipRatio = shoulderWidth / hipWidth
+        let sideView: Bool
+        switch viewMode {
+        case .auto:
+            sideView = shoulderToHipRatio < 0.9
+        case .front:
+            sideView = false
+        case .side:
+            sideView = true
+        }
+
+        let leftHipVis = leftHip.visibility?.floatValue ?? 0
+        let rightHipVis = rightHip.visibility?.floatValue ?? 0
+        let leftKneeVis = leftKnee.visibility?.floatValue ?? 0
+        let rightKneeVis = rightKnee.visibility?.floatValue ?? 0
+        let leftAnkleVis = leftAnkle.visibility?.floatValue ?? 0
+        let rightAnkleVis = rightAnkle.visibility?.floatValue ?? 0
+
+        let bodyVisible: Bool
+        if sideView {
+            let leftVis = min(leftHipVis, leftKneeVis, leftAnkleVis)
+            let rightVis = min(rightHipVis, rightKneeVis, rightAnkleVis)
+            bodyVisible = max(leftVis, rightVis) >= 0.4
+        } else {
+            bodyVisible = min(leftHipVis, rightHipVis, leftKneeVis, rightKneeVis, leftAnkleVis, rightAnkleVis) >= 0.4
+        }
+
+        let useLeftSide = (leftHipVis + leftKneeVis + leftAnkleVis) >= (rightHipVis + rightKneeVis + rightAnkleVis)
+        let sideShoulder = useLeftSide ? leftShoulder : rightShoulder
+        let sideHip = useLeftSide ? leftHip : rightHip
+        let sideKnee = useLeftSide ? leftKnee : rightKnee
+        let sideAnkle = useLeftSide ? leftAnkle : rightAnkle
+
+        let rawAngle = evaluator.calculateAngle(p1: sideHip, p2: sideKnee, p3: sideAnkle)
+        let angle = smoothValue(&squatAngleWindow, rawAngle, maxCount: squatSmoothingWindow)
+        let minAngleForDepth = squatCalibratedMinAngle ?? squatConfig.depthThreshold
+        depthProgress = depthProgressFor(currentAngle: angle, minAngle: minAngleForDepth, maxAngle: squatConfig.lockoutAngle)
         squatRepMinAngle = min(squatRepMinAngle, angle)
 
         let depthReached = angle <= squatConfig.depthThreshold
         let lockoutAngle = squatConfig.lockoutAngle
 
+        let torsoLength = max(0.001, sqrt(pow(Double(sideShoulder.x - sideHip.x), 2) + pow(Double(sideShoulder.y - sideHip.y), 2)))
+        let rawKneeValgus = sideView ? 0.0 : max(0.0, (Double(sideAnkle.x - sideKnee.x)) / max(0.001, hipWidth))
+        let rawForwardLean = sideView ? max(0.0, (Double(sideShoulder.x - sideHip.x)) / max(0.001, torsoLength)) : 0.0
+        let kneeValgus = smoothValue(&squatValgusWindow, rawKneeValgus, maxCount: squatSmoothingWindow)
+        let forwardLean = smoothValue(&squatLeanWindow, rawForwardLean, maxCount: squatSmoothingWindow)
+
+        if debugEnabled && (timestampMS - lastSquatLogMS) >= 1000 {
+            lastSquatLogMS = timestampMS
+            print(String(
+                format: "[SquatFrame] t=%d view=%@ ratio=%.2f depth=%.2f angle=%.1f hip=(%.2f,%.2f) knee=(%.2f,%.2f) ankle=(%.2f,%.2f) valgus=%.2f lean=%.2f",
+                timestampMS,
+                viewMode == .auto ? (sideView ? "side" : "front") : viewMode.rawValue.lowercased(),
+                shoulderToHipRatio,
+                depthProgress,
+                angle,
+                Double(sideHip.x), Double(sideHip.y),
+                Double(sideKnee.x), Double(sideKnee.y),
+                Double(sideAnkle.x), Double(sideAnkle.y),
+                kneeValgus,
+                forwardLean
+            ))
+        }
+
+        if squatRepStartMS != nil {
+            squatRepMaxKneeValgus = max(squatRepMaxKneeValgus, kneeValgus)
+            squatRepMaxForwardLean = max(squatRepMaxForwardLean, forwardLean)
+        }
+
         if squatState == "UP" {
-            if squatRepStartMS == nil { squatRepStartMS = timestampMS }
+            if squatRepStartMS == nil {
+                squatRepStartMS = timestampMS
+                squatRepMaxKneeValgus = 0
+                squatRepMaxForwardLean = 0
+            }
             if depthReached { squatState = "DOWN" }
+            if shouldUpdateLiveFeedback(message: "Lower down") {
+                updateFeedback(message: "Lower down", secondary: "", risk: .low)
+            }
         } else {
             if angle >= lockoutAngle {
                 let durationSec = squatRepStartMS.map { Double(timestampMS - $0) / 1000.0 } ?? 0
-                let tooFast = durationSec > 0 && durationSec < squatConfig.tempoMinSec
-                let shallow = !depthReached
-                var repScore = 100
-                if shallow { repScore -= 30 }
-                if tooFast { repScore -= 20 }
-                repScore = max(0, repScore)
+                let repDepthProgress = depthProgressFor(
+                    currentAngle: squatRepMinAngle,
+                    minAngle: minAngleForDepth,
+                    maxAngle: squatConfig.lockoutAngle
+                )
+                let repValues: [String: Double] = [
+                    "depthProgress": repDepthProgress,
+                    "tempoFast": (durationSec > 0 && durationSec < squatConfig.tempoMinSec) ? 1.0 : 0.0,
+                    "bodyVisible": bodyVisible ? 1.0 : 0.0,
+                    "kneeValgus": squatRepMaxKneeValgus,
+                    "forwardLean": squatRepMaxForwardLean,
+                    "shallowDepth": (squatRepMinAngle > 100 && squatRepMinAngle < 130) ? 1.0 : 0.0
+                ]
+
+                matchedForScore = evaluateRules(values: repValues, postureMode: .front, exerciseTag: "squat", rules: squatConfig.feedbackRules)
+                let repScore = scoreForRules(matchedForScore)
                 lastRepScore = repScore
                 repScores.append(repScore)
                 overallScore = repScores.isEmpty ? 0 : Int(Double(repScores.reduce(0, +)) / Double(repScores.count))
 
                 if repScore >= 85 { cleanReps += 1 }
                 repCount += 1
+                let msg = messageForRules(matchedForScore)
+                let sec = secondaryMessageForRules(matchedForScore)
+                let repRisk: RiskLevel = matchedForScore.contains(where: { $0.severity == .critical }) ? .critical
+                    : (matchedForScore.contains(where: { $0.severity == .important }) ? .medium : .low)
+                updateFeedback(message: msg, secondary: sec, risk: repRisk, force: true)
+                speakMessage = messageForAudio(matchedForScore)
+                repMetric = RepMetric(
+                    repIndex: repCount + 1,
+                    timestampMS: timestampMS,
+                    score: repScore,
+                    primaryMessage: msg,
+                    risk: repRisk,
+                    depthProgress: repDepthProgress,
+                    kneeValgus: squatRepMaxKneeValgus,
+                    forwardLean: squatRepMaxForwardLean
+                )
+                if debugEnabled {
+                    let ruleIds = matchedForScore.map { $0.id }.joined(separator: ",")
+                    print(String(
+                        format: "[SquatRep] rep=%d depth=%.2f min=%.1f valgus=%.2f lean=%.2f score=%d risk=%@ rules=[%@]",
+                        repCount + 1,
+                        repDepthProgress,
+                        squatRepMinAngle,
+                        squatRepMaxKneeValgus,
+                        squatRepMaxForwardLean,
+                        repScore,
+                        "\(repRisk)",
+                        ruleIds
+                    ))
+                }
+                if debugEnabled {
+                    let calibAngle = squatCalibratedMinAngle ?? 0
+                    debugText = String(
+                        format: "squat view=%@ ratio=%.2f depth=%.2f min=%.1f calib=%.1f valgus=%.2f lean=%.2f score=%d last=%d calibReps=%d/3",
+                        viewMode == .auto ? (sideView ? "side" : "front") : viewMode.rawValue.lowercased(),
+                        shoulderToHipRatio,
+                        repDepthProgress,
+                        squatRepMinAngle,
+                        calibAngle,
+                        squatRepMaxKneeValgus,
+                        squatRepMaxForwardLean,
+                        overallScore,
+                        lastRepScore,
+                        squatCalibrationRepCount
+                    )
+                }
+
+                if squatCalibrationRepCount < 3 {
+                    squatCalibrationRepCount += 1
+                    squatCalibrationMinAngleSum += squatRepMinAngle
+                    if squatCalibrationRepCount == 3 {
+                        squatCalibratedMinAngle = squatCalibrationMinAngleSum / 3.0
+                    }
+                    secondaryHint = "Calibrating: \(squatCalibrationRepCount)/3"
+                }
                 squatState = "UP"
                 squatRepMinAngle = 999
                 squatRepStartMS = nil
+                squatRepMaxKneeValgus = 0
+                squatRepMaxForwardLean = 0
 
                 if repCount >= targetReps {
                     isSessionComplete = true
                     sessionSummary = buildSessionSummary()
                 }
+            } else if shouldUpdateLiveFeedback(message: "Drive up") {
+                updateFeedback(message: "Drive up", secondary: "", risk: .low)
             }
         }
 
-        let values: [String: Double] = [
-            "depthProgress": depthProgress,
-            "tempoFast": (squatRepStartMS != nil && (Double(timestampMS - (squatRepStartMS ?? timestampMS)) / 1000.0) < squatConfig.tempoMinSec) ? 1.0 : 0.0,
-            "bodyVisible": bodyVisible ? 1.0 : 0.0,
-            "kneeValgus": max(0.0, (Double(ankle.x - knee.x)) / max(0.001, hipWidth)),
-            "forwardLean": max(0.0, (Double(shoulder.x - hip.x)) / max(0.001, torsoLength)),
-            "shallowDepth": (angle > 100 && angle < 130) ? 1.0 : 0.0
-        ]
-
-        let matched = evaluateRules(values: values, postureMode: .front, exerciseTag: "squat", rules: squatConfig.feedbackRules)
-        feedbackMessage = messageForRules(matched)
-        secondaryHint = secondaryMessageForRules(matched)
-        if let primary = matched.sorted(by: { severityRank($0.severity) > severityRank($1.severity) }).first {
-            currentRisk = riskLevel(for: primary.severity)
-        } else {
-            currentRisk = .low
+        if debugEnabled {
+            let calibAngle = squatCalibratedMinAngle ?? 0
+            debugText = String(
+                format: "squat view=%@ ratio=%.2f depth=%.2f min=%.1f calib=%.1f valgus=%.2f lean=%.2f score=%d last=%d",
+                viewMode == .auto ? (sideView ? "side" : "front") : viewMode.rawValue.lowercased(),
+                shoulderToHipRatio,
+                depthProgress,
+                squatRepMinAngle,
+                calibAngle,
+                squatRepMaxKneeValgus,
+                squatRepMaxForwardLean,
+                overallScore,
+                lastRepScore
+            )
         }
-        overlayColors = colorsForRisk(currentRisk, arms: false, legs: true)
+
+        overlayColors = colorsForSquat(rules: matchedForScore)
         return EngineOutput(
             repCount: repCount,
             cleanReps: cleanReps,
@@ -378,7 +546,8 @@ final class ExerciseEngine {
             isSessionComplete: isSessionComplete,
             sessionSummary: sessionSummary,
             debugText: debugText,
-            speakMessage: nil
+            speakMessage: speakMessage,
+            repMetric: repMetric
         )
     }
 
@@ -467,7 +636,8 @@ final class ExerciseEngine {
                 isSessionComplete: isSessionComplete,
                 sessionSummary: sessionSummary,
                 debugText: debugText,
-                speakMessage: nil
+                speakMessage: nil,
+                repMetric: nil
             )
         }
 
@@ -555,7 +725,8 @@ final class ExerciseEngine {
             isSessionComplete: isSessionComplete,
             sessionSummary: sessionSummary,
             debugText: debugText,
-            speakMessage: nil
+            speakMessage: nil,
+            repMetric: nil
         )
     }
     
@@ -601,11 +772,60 @@ final class ExerciseEngine {
             rightLeg: legs ? color : .white.opacity(0.6)
         )
     }
+
+    private func colorsForSquat(rules: [FeedbackRule]) -> OverlayColors {
+        guard !rules.isEmpty else {
+            return OverlayColors(
+                leftArm: .white.opacity(0.6),
+                rightArm: .white.opacity(0.6),
+                torso: .white.opacity(0.6),
+                leftLeg: .green,
+                rightLeg: .green
+            )
+        }
+
+        let sorted = rules.sorted { severityRank($0.severity) > severityRank($1.severity) }
+        let primary = sorted[0]
+        let color: Color
+        switch primary.severity {
+        case .critical: color = .red
+        case .important: color = .orange
+        case .minor: color = .yellow
+        }
+
+        var torso = Color.white.opacity(0.6)
+        var legs = Color.white.opacity(0.6)
+        switch primary.metric {
+        case "forwardLean":
+            torso = color
+        case "kneeValgus", "shallowDepth", "depthProgress":
+            legs = color
+        default:
+            legs = color
+        }
+
+        return OverlayColors(
+            leftArm: .white.opacity(0.6),
+            rightArm: .white.opacity(0.6),
+            torso: torso,
+            leftLeg: legs,
+            rightLeg: legs
+        )
+    }
     
     private func emaFilter(previous: Double?, value: Double, dtSeconds: Double, tau: Double) -> Double {
         guard let previous = previous else { return value }
         let alpha = 1.0 - exp(-dtSeconds / tau)
         return (alpha * value) + ((1.0 - alpha) * previous)
+    }
+
+    private func smoothValue(_ window: inout [Double], _ value: Double, maxCount: Int) -> Double {
+        window.append(value)
+        if window.count > maxCount {
+            window.removeFirst(window.count - maxCount)
+        }
+        let sum = window.reduce(0, +)
+        return sum / Double(window.count)
     }
 
     private func smoothPushUpMetrics(metrics: PushUpMetrics,

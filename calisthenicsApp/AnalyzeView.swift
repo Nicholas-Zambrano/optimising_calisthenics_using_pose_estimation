@@ -82,7 +82,8 @@ struct AnalyzeView: View {
                 sensitivity: settings.sensitivity,
                 focus: settings.focus,
                 audioEnabled: settings.audioEnabled,
-                useFrontCamera: useFrontCamera
+                useFrontCamera: useFrontCamera,
+                squatViewMode: .auto
             )) {
                 Text("Start")
                     .font(.headline)
