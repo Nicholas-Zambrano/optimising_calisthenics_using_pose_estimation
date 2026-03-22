@@ -25,7 +25,7 @@ struct MainMenuView: View {
     @State private var selectedSensitivity: FeedbackSensitivity = .normal
     @State private var selectedFocus: FeedbackFocus = .armsOnly
     @State private var useFrontCamera: Bool = false
-    @State private var selectedSquatViewMode: SquatViewMode = .auto
+    @State private var selectedSquatViewMode: SquatViewMode = .side
     
     var body: some View {
         let palette = Theme.palette(choice: settings.themeChoice, darkMode: settings.darkMode)

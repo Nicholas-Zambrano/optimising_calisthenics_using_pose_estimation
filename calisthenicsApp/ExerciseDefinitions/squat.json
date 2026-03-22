@@ -5,13 +5,49 @@
   "tempoMinSec": 0.6,
   "feedbackRules": [
     {
+      "id": "knees_caving_critical",
+      "severity": "critical",
+      "message": "Knees caving in — push them out",
+      "metric": "kneeValgus",
+      "op": "gt",
+      "threshold": 0.22,
+      "appliesIn": ["squat", "front"]
+    },
+    {
       "id": "knees_caving",
       "severity": "important",
-      "message": "Keep knees tracking over feet",
+      "message": "Keep knees tracking over toes",
       "metric": "kneeValgus",
       "op": "gt",
       "threshold": 0.15,
       "appliesIn": ["squat", "front"]
+    },
+    {
+      "id": "knees_forward_critical",
+      "severity": "critical",
+      "message": "Knees too far forward — drive through heels",
+      "metric": "kneeForwardTravel",
+      "op": "gt",
+      "threshold": 1.30,
+      "appliesIn": ["squat", "side"]
+    },
+    {
+      "id": "knees_forward",
+      "severity": "important",
+      "message": "Keep shins more vertical",
+      "metric": "kneeForwardTravel",
+      "op": "gt",
+      "threshold": 1.10,
+      "appliesIn": ["squat", "side"]
+    },
+    {
+      "id": "leaning_forward_critical",
+      "severity": "critical",
+      "message": "Chest up — you are leaning too far forward",
+      "metric": "forwardLean",
+      "op": "gt",
+      "threshold": 0.78,
+      "appliesIn": ["squat", "side"]
     },
     {
       "id": "leaning_forward",
@@ -19,25 +55,34 @@
       "message": "Keep chest up",
       "metric": "forwardLean",
       "op": "gt",
-      "threshold": 0.35,
+      "threshold": 0.65,
+      "appliesIn": ["squat", "side"]
+    },
+    {
+      "id": "pelvic_tilt",
+      "severity": "important",
+      "message": "Lower back rounding at depth — squat to parallel",
+      "metric": "pelvicTilt",
+      "op": "gt",
+      "threshold": 0.20,
       "appliesIn": ["squat", "side"]
     },
     {
       "id": "not_deep_enough",
       "severity": "important",
-      "message": "Go deeper",
-      "metric": "shallowDepth",
-      "op": "gt",
+      "message": "Go deeper — aim for parallel",
+      "metric": "depthQuality",
+      "op": "lt",
       "threshold": 0.5,
       "appliesIn": ["squat"]
     },
     {
       "id": "squat_depth",
       "severity": "minor",
-      "message": "Aim for full depth",
-      "metric": "depthProgress",
+      "message": "Try to reach full depth",
+      "metric": "depthQuality",
       "op": "lt",
-      "threshold": 0.7,
+      "threshold": 0.75,
       "appliesIn": ["squat"]
     },
     {
@@ -56,7 +101,7 @@
       "metric": "bodyVisible",
       "op": "lt",
       "threshold": 0.5,
-      "appliesIn": ["squat"]
+      "appliesIn": ["squat", "front"]
     }
   ]
 }

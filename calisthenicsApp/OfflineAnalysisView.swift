@@ -1,5 +1,7 @@
 import SwiftUI
 import PhotosUI
+import AVKit
+import Charts
 
 struct OfflineAnalysisView: View {
     @EnvironmentObject private var settings: AppSettings
@@ -13,8 +15,9 @@ struct OfflineAnalysisView: View {
     @State private var savedMessage = ""
     @State private var savedHistory = false
     @State private var exportURL: URL?
-    @State private var mirrorOverlay = true
+    @State private var mirrorOverlay = false
     @State private var selectedRepID: UUID?
+    @State private var repPlayer: AVPlayer?
     
     var body: some View {
         let palette = Theme.palette(choice: settings.themeChoice, darkMode: settings.darkMode)
@@ -28,8 +31,9 @@ struct OfflineAnalysisView: View {
                             .font(.system(size: 28, weight: .heavy, design: .rounded))
                             .foregroundColor(palette.textPrimary)
                         
-                        Text("Upload a workout video and get feedback.")
+                        Text("Upload a workout video and get rep-by-rep feedback. For best results, record side-on for pull-ups and push-ups, or side-on / front-facing for squats.")
                             .foregroundColor(palette.textSecondary)
+                            .font(.subheadline)
                         
                         Picker("Exercise", selection: $selectedExercise) {
                             Text("Push-Up").tag("Push-Up")
@@ -37,6 +41,8 @@ struct OfflineAnalysisView: View {
                             Text("Pull-Up").tag("Pull-Up")
                         }
                         .pickerStyle(.segmented)
+
+                        cameraGuideCard(for: selectedExercise, palette: palette)
 
                         Toggle("Mirror Overlay (front camera)", isOn: $mirrorOverlay)
                             .tint(palette.accent)
@@ -59,6 +65,9 @@ struct OfflineAnalysisView: View {
                         .onChange(of: selectedItem) { newItem in
                             Task {
                                 guard let item = newItem else { return }
+                                selectedRepID = nil
+                                repPlayer = nil
+                                savedHistory = false
                                 if let data = try? await item.loadTransferable(type: Data.self) {
                                     let tempURL = FileManager.default.temporaryDirectory
                                         .appendingPathComponent("offline-\(UUID().uuidString).mov")
@@ -196,8 +205,10 @@ struct OfflineAnalysisView: View {
                     }
 
                         if !manager.repSummaries.isEmpty {
+                            let bestID = manager.repSummaries.max(by: { $0.score < $1.score })?.id
+                            let worstID = manager.repSummaries.count > 1 ? manager.repSummaries.min(by: { $0.score < $1.score })?.id : nil
                             VStack(alignment: .leading, spacing: 10) {
-                                Text("Rep Timeline")
+                                Text("Rep Timeline — tap to review")
                                     .font(.headline)
                                     .foregroundColor(palette.textPrimary)
                                 
@@ -205,28 +216,39 @@ struct OfflineAnalysisView: View {
                                     Button {
                                         selectedRepID = rep.id
                                     } label: {
-                                        HStack(spacing: 10) {
+                                        HStack(spacing: 8) {
                                             Text("#\(rep.repIndex)")
                                                 .font(.caption.bold())
-                                                .frame(width: 36, alignment: .leading)
-                                            Text(rep.timestampLabel)
-                                                .font(.caption)
-                                                .foregroundColor(palette.textSecondary)
-                                                .frame(width: 50, alignment: .leading)
+                                                .frame(width: 28, alignment: .leading)
+                                            Group {
+                                                if rep.id == bestID {
+                                                    Text("★ Best").foregroundColor(.yellow)
+                                                } else if rep.id == worstID {
+                                                    Text("▼ Worst").foregroundColor(.red)
+                                                } else {
+                                                    Text("").foregroundColor(.clear)
+                                                }
+                                            }
+                                            .font(.caption2.bold())
+                                            .frame(width: 46, alignment: .leading)
                                             Text("\(rep.score)%")
                                                 .font(.caption.bold())
-                                                .frame(width: 50, alignment: .leading)
+                                                .frame(width: 36, alignment: .leading)
                                             Text(rep.riskLabel)
                                                 .font(.caption2.weight(.semibold))
-                                                .padding(.horizontal, 6)
-                                                .padding(.vertical, 3)
-                                                .background(palette.cardAlt.opacity(0.9))
-                                                .cornerRadius(6)
+                                                .padding(.horizontal, 5)
+                                                .padding(.vertical, 2)
+                                                .background(rep.risk == .critical ? Color.red.opacity(0.25) : (rep.risk == .medium ? Color.orange.opacity(0.25) : Color.green.opacity(0.25)))
+                                                .foregroundColor(rep.risk == .critical ? .red : (rep.risk == .medium ? .orange : .green))
+                                                .cornerRadius(5)
                                             Text(rep.primaryMessage)
                                                 .font(.caption)
                                                 .foregroundColor(palette.textSecondary)
                                                 .lineLimit(1)
                                             Spacer()
+                                            Image(systemName: "play.circle.fill")
+                                                .font(.caption)
+                                                .foregroundColor(palette.textSecondary)
                                         }
                                         .padding(.horizontal, 10)
                                         .padding(.vertical, 8)
@@ -239,21 +261,80 @@ struct OfflineAnalysisView: View {
                             .padding(.top, 8)
                         }
 
-                        if let selected = manager.repSummaries.first(where: { $0.id == selectedRepID }),
-                           let snap = selected.snapshot {
+                        if let selected = manager.repSummaries.first(where: { $0.id == selectedRepID }) {
                             VStack(alignment: .leading, spacing: 8) {
-                                Text("Selected Rep \(selected.repIndex)")
-                                    .font(.caption).bold()
-                                    .foregroundColor(palette.textSecondary)
-                                Image(uiImage: snap)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(height: 160)
-                                    .clipped()
-                                    .cornerRadius(12)
-                                Text("\(selected.riskLabel): \(selected.primaryMessage)")
+                                HStack {
+                                    Text("Rep \(selected.repIndex) — \(selected.riskLabel)")
+                                        .font(.caption.bold())
+                                        .foregroundColor(palette.textPrimary)
+                                    Spacer()
+                                    Text("Score: \(selected.score)%")
+                                        .font(.caption.bold())
+                                        .foregroundColor(palette.textPrimary)
+                                }
+                                if let player = repPlayer {
+                                    VideoPlayer(player: player)
+                                        .frame(height: 240)
+                                        .cornerRadius(12)
+                                } else if let snap = selected.snapshot {
+                                    Image(uiImage: snap)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(height: 240)
+                                        .clipped()
+                                        .cornerRadius(12)
+                                }
+                                Text(selected.primaryMessage)
                                     .font(.caption)
                                     .foregroundColor(palette.textSecondary)
+                                Text("Peak at \(selected.timestampLabel)")
+                                    .font(.caption2)
+                                    .foregroundColor(palette.textSecondary.opacity(0.7))
+                                if !selected.angleSamples.isEmpty {
+                                    let angleLabel = selectedExercise.lowercased().contains("squat") ? "Knee Angle" : "Elbow Angle"
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        HStack {
+                                            Text(angleLabel)
+                                                .font(.caption2.bold())
+                                                .foregroundColor(palette.textSecondary)
+                                            Spacer()
+                                            Text("— green line = 90° target depth")
+                                                .font(.system(size: 9))
+                                                .foregroundColor(.green.opacity(0.8))
+                                        }
+                                        Chart {
+                                            ForEach(0..<selected.angleSamples.count, id: \.self) { i in
+                                                LineMark(
+                                                    x: .value("Frame", i),
+                                                    y: .value("°", selected.angleSamples[i])
+                                                )
+                                                .foregroundStyle(Color.yellow)
+                                                .interpolationMethod(.catmullRom)
+                                                .lineStyle(StrokeStyle(lineWidth: 2))
+                                            }
+                                            RuleMark(y: .value("Target depth", 90.0))
+                                                .foregroundStyle(Color.green.opacity(0.8))
+                                                .lineStyle(StrokeStyle(lineWidth: 1, dash: [4]))
+                                        }
+                                        .frame(height: 110)
+                                        .chartYScale(domain: 40.0...180.0)
+                                        .chartXAxis(.hidden)
+                                        .chartYAxis {
+                                            AxisMarks(values: [60.0, 90.0, 120.0, 150.0]) { v in
+                                                AxisValueLabel {
+                                                    if let val = v.as(Double.self) {
+                                                        Text("\(Int(val))°")
+                                                            .font(.system(size: 9))
+                                                            .foregroundColor(palette.textSecondary)
+                                                    }
+                                                }
+                                                AxisGridLine()
+                                            }
+                                        }
+                                        .background(Color.white.opacity(0.05))
+                                        .cornerRadius(8)
+                                    }
+                                }
                             }
                             .padding(.top, 6)
                         }
@@ -297,9 +378,83 @@ struct OfflineAnalysisView: View {
                 )
                 savedHistory = true
             }
+            .onChange(of: selectedRepID) { newID in
+                guard let id = newID,
+                      let rep = manager.repSummaries.first(where: { $0.id == id }),
+                      let url = selectedURL else {
+                    repPlayer = nil
+                    return
+                }
+                let player = AVPlayer(url: url)
+                let peakTime = CMTime(value: CMTimeValue(rep.peakTimestampMS), timescale: 1000)
+                player.seek(to: peakTime,
+                            toleranceBefore: CMTime(seconds: 0.5, preferredTimescale: 600),
+                            toleranceAfter: CMTime(seconds: 0.5, preferredTimescale: 600))
+                repPlayer = player
+            }
         }
     }
     
+    private func cameraGuideData(for exercise: String) -> (angle: String, height: String, tip: String) {
+        let ex = exercise.lowercased()
+        if ex.contains("pull") {
+            return (
+                "Side-on (arm plane facing camera)",
+                "Chest height, 2–3 m away",
+                "Side view gives the most accurate elbow angle and chin-over-bar detection."
+            )
+        } else if ex.contains("push") {
+            return (
+                "Side-on (body parallel to camera)",
+                "Floor level or low tripod, 1.5–2 m away",
+                "Side view captures elbow flexion and body alignment clearly."
+            )
+        } else {
+            return (
+                "Side-on or directly front-facing",
+                "Hip height, 1.5–2 m away",
+                "Side view measures lean and knee travel; front view measures knee valgus. Both are supported."
+            )
+        }
+    }
+
+    private func cameraGuideCard(for exercise: String, palette: ThemePalette) -> some View {
+        let data = cameraGuideData(for: exercise)
+        return HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "camera.fill")
+                .foregroundColor(.blue)
+                .font(.caption)
+                .padding(.top, 2)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Camera Setup")
+                    .font(.caption.bold())
+                    .foregroundColor(palette.textPrimary)
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.triangle.turn.up.right.circle")
+                        .font(.system(size: 9))
+                    Text("Angle: \(data.angle)")
+                        .font(.system(size: 11))
+                }
+                .foregroundColor(palette.textSecondary)
+                HStack(spacing: 4) {
+                    Image(systemName: "ruler")
+                        .font(.system(size: 9))
+                    Text("Position: \(data.height)")
+                        .font(.system(size: 11))
+                }
+                .foregroundColor(palette.textSecondary)
+                Text(data.tip)
+                    .font(.system(size: 10))
+                    .foregroundColor(palette.textSecondary.opacity(0.75))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(10)
+        .background(Color.blue.opacity(0.08))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.blue.opacity(0.25), lineWidth: 1))
+        .cornerRadius(10)
+    }
+
     private func summaryRow(label: String, value: String) -> some View {
         HStack {
             Text(label).foregroundColor(Theme.palette(choice: settings.themeChoice, darkMode: settings.darkMode).textSecondary)

@@ -25,9 +25,9 @@ enum PushUpPostureMode {
 }
 
 enum SquatViewMode: String, CaseIterable {
-    case auto = "Auto"
-    case front = "Front"
     case side = "Side"
+    case front = "Front"
+    case auto = "Auto"
 }
 
 struct PushUpMetrics {

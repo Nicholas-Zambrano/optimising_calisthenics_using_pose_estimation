@@ -461,6 +461,12 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
             
             if self.session.canAddInput(videoInput) { self.session.addInput(videoInput) }
             
+            if self.session.canSetSessionPreset(.hd1280x720) {
+                self.session.sessionPreset = .hd1280x720
+            } else {
+                self.session.sessionPreset = .high
+            }
+            
             let videoOutput = AVCaptureVideoDataOutput()
             videoOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
             videoOutput.alwaysDiscardsLateVideoFrames = true
@@ -469,17 +475,15 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
             if self.session.canAddOutput(videoOutput) {
                 self.session.addOutput(videoOutput)
                 
-                // This is the critical fix from your old commit
                 if let connection = videoOutput.connection(with: .video) {
-                    // Using rotation angle is often more stable for MediaPipe streams
                     if connection.isVideoRotationAngleSupported(90) {
                         connection.videoRotationAngle = 90
                     } else if connection.isVideoOrientationSupported {
                         connection.videoOrientation = .portrait
                     }
-                    
                     if connection.isVideoMirroringSupported {
-                        connection.isVideoMirrored = self.isFrontCamera
+                        connection.automaticallyAdjustsVideoMirroring = false
+                        connection.isVideoMirrored = false
                     }
                 }
             }

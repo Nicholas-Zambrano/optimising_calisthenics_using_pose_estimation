@@ -10,10 +10,12 @@ final class OfflineAnalysisManager: ObservableObject {
         let id = UUID()
         let repIndex: Int
         let timestampMS: Int
+        let peakTimestampMS: Int
         let score: Int
         let primaryMessage: String
         let risk: RiskLevel
         let snapshot: UIImage?
+        let angleSamples: [Double]
         
         var timestampLabel: String {
             let totalSec = max(0, timestampMS / 1000)
@@ -153,6 +155,8 @@ final class OfflineAnalysisManager: ObservableObject {
             var lastRepCount = 0
             var currentRepMaxDepth: Double = 0.0
             var currentRepSnapshot: UIImage?
+            var currentRepPeakTimestampMS: Int = 0
+            var currentRepAngleSamples: [Double] = []
             var lastLogMS: Int = 0
             
             DispatchQueue.main.async {
@@ -191,46 +195,56 @@ final class OfflineAnalysisManager: ObservableObject {
                         let processed = self.processOnMain(processor: processor, landmarks: landmarks, timestampMS: tsMS)
                         if processed.depthProgress >= currentRepMaxDepth && processed.depthProgress > 0.5 {
                             currentRepMaxDepth = processed.depthProgress
+                            currentRepPeakTimestampMS = tsMS
                             currentRepSnapshot = self.renderAnnotatedFrame(
                                 pixelBuffer: pixelBuffer,
                                 landmarks: landmarks,
                                 overlayColors: processed.overlayColors
                             )
                         }
+                        if let angle = self.primaryAngle(exercise: exercise, landmarks: landmarks) {
+                            currentRepAngleSamples.append(angle)
+                        }
 
                         if processed.repCount > lastRepCount {
                             lastRepCount = processed.repCount
-                            let frame = currentRepSnapshot ?? self.renderAnnotatedFrame(
-                                pixelBuffer: pixelBuffer,
-                                landmarks: landmarks,
-                                overlayColors: processed.overlayColors
-                            )
-                            let summary = RepSummary(
-                                repIndex: processed.repCount,
-                                timestampMS: tsMS,
-                                score: processed.lastRepScore,
-                                primaryMessage: processed.feedbackMessage,
-                                risk: processed.risk,
-                                snapshot: frame
-                            )
-                            DispatchQueue.main.async {
-                                self.repSummaries.append(summary)
-                            }
-                            if let frame = frame {
-                                let score = processed.lastRepScore
+                            let repScore = processed.lastRepScore
+                            if repScore >= 10 {
+                                let frame = currentRepSnapshot ?? self.renderAnnotatedFrame(
+                                    pixelBuffer: pixelBuffer,
+                                    landmarks: landmarks,
+                                    overlayColors: processed.overlayColors
+                                )
+                                let summary = RepSummary(
+                                    repIndex: processed.repCount,
+                                    timestampMS: tsMS,
+                                    peakTimestampMS: currentRepPeakTimestampMS > 0 ? currentRepPeakTimestampMS : tsMS,
+                                    score: repScore,
+                                    primaryMessage: processed.feedbackMessage,
+                                    risk: processed.risk,
+                                    snapshot: frame,
+                                    angleSamples: currentRepAngleSamples
+                                )
                                 DispatchQueue.main.async {
-                                    if score >= self.bestScore {
-                                        self.bestScore = score
-                                        self.bestSnapshot = frame
-                                    }
-                                    if score <= self.worstScore {
-                                        self.worstScore = score
-                                        self.worstSnapshot = frame
+                                    self.repSummaries.append(summary)
+                                }
+                                if let frame = frame {
+                                    DispatchQueue.main.async {
+                                        if repScore >= self.bestScore {
+                                            self.bestScore = repScore
+                                            self.bestSnapshot = frame
+                                        }
+                                        if repScore <= self.worstScore {
+                                            self.worstScore = repScore
+                                            self.worstSnapshot = frame
+                                        }
                                     }
                                 }
                             }
                             currentRepMaxDepth = 0.0
                             currentRepSnapshot = nil
+                            currentRepPeakTimestampMS = 0
+                            currentRepAngleSamples = []
                         }
                         
                         if !self.loggedFirstSnapshot, let frame = currentRepSnapshot ?? self.bestSnapshot ?? self.worstSnapshot {
@@ -256,6 +270,22 @@ final class OfflineAnalysisManager: ObservableObject {
                 } else {
                     self.status = "Complete"
                     self.logLines.append("Analysis complete")
+                }
+                if self.sessionSummary == nil && !self.repSummaries.isEmpty {
+                    let scores = self.repSummaries.map { $0.score }
+                    let total = self.repSummaries.count
+                    let avg = scores.reduce(0, +) / max(1, total)
+                    let clean = scores.filter { $0 >= 85 }.count
+                    let msgs = self.repSummaries.map { $0.primaryMessage }.filter { !$0.isEmpty }
+                    let common = Dictionary(grouping: msgs, by: { $0 }).max(by: { $0.value.count < $1.value.count })?.key
+                    self.sessionSummary = SessionSummary(
+                        totalReps: total,
+                        averageScore: avg,
+                        cleanReps: clean,
+                        bestRep: scores.max() ?? 0,
+                        worstRep: scores.min() ?? 0,
+                        mostCommonIssueMessage: common
+                    )
                 }
                 self.isRunning = false
             }
@@ -436,8 +466,8 @@ final class OfflineAnalysisManager: ObservableObject {
                                 on: outBuffer,
                                 landmarks: landmarks,
                                 overlayColors: .neutral,
-                                message: "Resting",
-                                score: 0,
+                                message: "",
+                                score: -1,
                                 risk: .low
                             )
                         }
@@ -663,6 +693,7 @@ final class OfflineAnalysisManager: ObservableObject {
         }
 
         // 2. Create a transparent UIImage containing our Text
+        guard score >= 0 && !message.isEmpty else { return }
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 1.0)
         let color: UIColor = (risk == .critical) ? .systemRed : (risk == .medium ? .systemOrange : .systemGreen)
         
@@ -727,18 +758,56 @@ final class OfflineAnalysisManager: ObservableObject {
     }
     
     private func isEngagedForExercise(exercise: String, landmarks: [NormalizedLandmark]) -> Bool {
+        guard landmarks.count > 28 else { return false }
         let normalized = exercise.lowercased()
-        if normalized.contains("pull") {
-            let leftWrist = landmarks[15]
-            let rightWrist = landmarks[16]
+        func vis(_ i: Int) -> Float { landmarks[i].visibility?.floatValue ?? 0 }
+        if normalized.contains("squat") {
+            // Require at least one full leg chain (hip-knee-ankle) to be visible.
+            // This handles side-on video where the far-side limb may be occluded.
+            let leftChain  = min(vis(23), vis(25), vis(27))
+            let rightChain = min(vis(24), vis(26), vis(28))
+            return max(leftChain, rightChain) >= 0.45
+        } else if normalized.contains("push") {
+            let leftChain  = min(vis(11), vis(13), vis(15))
+            let rightChain = min(vis(12), vis(14), vis(16))
+            return max(leftChain, rightChain) >= 0.45
+        } else if normalized.contains("pull") {
+            let leftWrist    = landmarks[15]
+            let rightWrist   = landmarks[16]
             let leftShoulder = landmarks[11]
             let rightShoulder = landmarks[12]
-            let wristsBelow = leftWrist.y > leftShoulder.y && rightWrist.y > rightShoulder.y
-            return !wristsBelow
+            let wristsBelow  = leftWrist.y > leftShoulder.y && rightWrist.y > rightShoulder.y
+            let leftChain    = min(vis(11), vis(13), vis(15))
+            let rightChain   = min(vis(12), vis(14), vis(16))
+            return !wristsBelow && max(leftChain, rightChain) >= 0.40
         }
         return true
     }
     
+    private func angle3(_ a: (Double, Double), _ b: (Double, Double), _ c: (Double, Double)) -> Double {
+        let abx = a.0 - b.0, aby = a.1 - b.1
+        let cbx = c.0 - b.0, cby = c.1 - b.1
+        let dot = abx * cbx + aby * cby
+        let mag = sqrt(abx * abx + aby * aby) * sqrt(cbx * cbx + cby * cby)
+        guard mag > 0 else { return 180 }
+        return acos(max(-1.0, min(1.0, dot / mag))) * 180 / .pi
+    }
+
+    private func primaryAngle(exercise: String, landmarks: [NormalizedLandmark]) -> Double? {
+        guard landmarks.count > 28 else { return nil }
+        let ex = exercise.lowercased()
+        func pt(_ i: Int) -> (Double, Double) { (Double(landmarks[i].x), Double(landmarks[i].y)) }
+        if ex.contains("squat") {
+            let left  = angle3(pt(23), pt(25), pt(27))
+            let right = angle3(pt(24), pt(26), pt(28))
+            return (left + right) / 2.0
+        } else {
+            let left  = angle3(pt(11), pt(13), pt(15))
+            let right = angle3(pt(12), pt(14), pt(16))
+            return (left + right) / 2.0
+        }
+    }
+
     private func colorFor(connection: (Int, Int), overlayColors: OverlayColors) -> UIColor {
         switch connection {
         case (11, 13), (13, 15):
