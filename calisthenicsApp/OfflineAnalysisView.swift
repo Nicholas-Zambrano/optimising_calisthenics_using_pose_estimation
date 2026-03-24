@@ -10,11 +10,10 @@ struct OfflineAnalysisView: View {
     @StateObject private var manager = OfflineAnalysisManager()
     @State private var selectedItem: PhotosPickerItem?
     @State private var selectedURL: URL?
-    @State private var selectedExercise: String = "Push-Up"
+    @AppStorage("offlineAnalysisExercise") private var selectedExercise: String = "Squat"
     @State private var showSavedAlert = false
     @State private var savedMessage = ""
     @State private var savedHistory = false
-    @State private var exportURL: URL?
     @State private var mirrorOverlay = false
     @State private var selectedRepID: UUID?
     @State private var repPlayer: AVPlayer?
@@ -106,37 +105,6 @@ struct OfflineAnalysisView: View {
                         }
                         .padding(.top, 8)
 
-                    Button {
-                        guard let url = selectedURL else { return }
-                        manager.exportAnnotatedVideo(url: url, exercise: selectedExercise, settings: settings) { output in
-                            exportURL = output
-                            if let output = output {
-                                UISaveVideoAtPathToSavedPhotosAlbum(output.path, nil, nil, nil)
-                                savedMessage = "Annotated video saved to Photos"
-                                showSavedAlert = true
-                            }
-                        }
-                    } label: {
-                        Text(manager.isExporting ? "Exporting..." : "Export Annotated Video")
-                            .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(selectedURL == nil ? Color.gray : palette.cardAlt)
-                        .foregroundColor(palette.textPrimary)
-                        .cornerRadius(12)
-                    }
-                    .disabled(selectedURL == nil || manager.isExporting)
-
-                    if manager.isExporting {
-                        Button("Cancel Export") {
-                            manager.cancel()
-                            manager.isExporting = false
-                            manager.status = "Export cancelled"
-                            manager.logLines.append("Export cancelled")
-                        }
-                        .foregroundColor(palette.textSecondary)
-                    }
-                    
                     if let summary = manager.sessionSummary {
                         VStack(spacing: 10) {
                             summaryRow(label: "Total Reps", value: "\(summary.totalReps)")
@@ -204,7 +172,7 @@ struct OfflineAnalysisView: View {
                         .padding(.top, 8)
                     }
 
-                        if !manager.repSummaries.isEmpty {
+                    if !manager.repSummaries.isEmpty {
                             let bestID = manager.repSummaries.max(by: { $0.score < $1.score })?.id
                             let worstID = manager.repSummaries.count > 1 ? manager.repSummaries.min(by: { $0.score < $1.score })?.id : nil
                             VStack(alignment: .leading, spacing: 10) {
@@ -261,7 +229,7 @@ struct OfflineAnalysisView: View {
                             .padding(.top, 8)
                         }
 
-                        if let selected = manager.repSummaries.first(where: { $0.id == selectedRepID }) {
+                    if let selected = manager.repSummaries.first(where: { $0.id == selectedRepID }) {
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack {
                                     Text("Rep \(selected.repIndex) — \(selected.riskLabel)")
@@ -270,7 +238,7 @@ struct OfflineAnalysisView: View {
                                     Spacer()
                                     Text("Score: \(selected.score)%")
                                         .font(.caption.bold())
-                                        .foregroundColor(palette.textPrimary)
+                                        .foregroundColor(selected.score >= 85 ? .green : (selected.score >= 55 ? .orange : .red))
                                 }
                                 if let player = repPlayer {
                                     VideoPlayer(player: player)
@@ -284,12 +252,36 @@ struct OfflineAnalysisView: View {
                                         .clipped()
                                         .cornerRadius(12)
                                 }
-                                Text(selected.primaryMessage)
-                                    .font(.caption)
-                                    .foregroundColor(palette.textSecondary)
                                 Text("Peak at \(selected.timestampLabel)")
                                     .font(.caption2)
                                     .foregroundColor(palette.textSecondary.opacity(0.7))
+                                if selected.allMessages.isEmpty {
+                                    Text("✓ Form looks clean for this rep")
+                                        .font(.caption.bold())
+                                        .foregroundColor(.green)
+                                } else {
+                                    VStack(alignment: .leading, spacing: 5) {
+                                        Text("Issues found:")
+                                            .font(.caption2.bold())
+                                            .foregroundColor(palette.textSecondary)
+                                        ForEach(0..<selected.allMessages.count, id: \.self) { i in
+                                            let item = selected.allMessages[i]
+                                            HStack(alignment: .top, spacing: 6) {
+                                                Text(item.severity == .critical ? "CRITICAL" : (item.severity == .important ? "IMPORTANT" : "MINOR"))
+                                                    .font(.system(size: 9, weight: .heavy))
+                                                    .padding(.horizontal, 5)
+                                                    .padding(.vertical, 2)
+                                                    .background(item.severity == .critical ? Color.red.opacity(0.2) : (item.severity == .important ? Color.orange.opacity(0.2) : Color.yellow.opacity(0.2)))
+                                                    .foregroundColor(item.severity == .critical ? .red : (item.severity == .important ? .orange : .yellow))
+                                                    .cornerRadius(4)
+                                                Text(item.message)
+                                                    .font(.caption)
+                                                    .foregroundColor(palette.textPrimary)
+                                                    .fixedSize(horizontal: false, vertical: true)
+                                            }
+                                        }
+                                    }
+                                }
                                 if !selected.angleSamples.isEmpty {
                                     let angleLabel = selectedExercise.lowercased().contains("squat") ? "Knee Angle" : "Elbow Angle"
                                     VStack(alignment: .leading, spacing: 4) {
@@ -337,20 +329,6 @@ struct OfflineAnalysisView: View {
                                 }
                             }
                             .padding(.top, 6)
-                        }
-
-                    if !manager.logLines.isEmpty {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Processing Log")
-                                .font(.headline)
-                                .foregroundColor(palette.textPrimary)
-                            ForEach(Array(manager.logLines.enumerated()), id: \.offset) { _, line in
-                                Text("• \(line)")
-                                    .font(.caption)
-                                    .foregroundColor(palette.textSecondary)
-                            }
-                        }
-                        .padding(.top, 8)
                     }
                     
                         Spacer()

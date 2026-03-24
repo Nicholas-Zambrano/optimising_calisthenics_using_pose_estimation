@@ -13,6 +13,7 @@ final class OfflineAnalysisManager: ObservableObject {
         let peakTimestampMS: Int
         let score: Int
         let primaryMessage: String
+        let allMessages: [(message: String, severity: RuleSeverity)]
         let risk: RiskLevel
         let snapshot: UIImage?
         let angleSamples: [Double]
@@ -28,7 +29,7 @@ final class OfflineAnalysisManager: ObservableObject {
             switch risk {
             case .critical: return "Critical"
             case .medium: return "Important"
-            case .low: return "Minor"
+            case .low: return allMessages.isEmpty ? "Clean" : "Minor"
             }
         }
     }
@@ -202,13 +203,23 @@ final class OfflineAnalysisManager: ObservableObject {
                                 overlayColors: processed.overlayColors
                             )
                         }
-                        if let angle = self.primaryAngle(exercise: exercise, landmarks: landmarks) {
+                        if let angle = self.primaryAngle(exercise: exercise, landmarks: landmarks),
+                           processed.depthProgress > 0.05 || (!currentRepAngleSamples.isEmpty) {
                             currentRepAngleSamples.append(angle)
                         }
 
                         if processed.repCount > lastRepCount {
                             lastRepCount = processed.repCount
-                            let repScore = processed.lastRepScore
+                            let allMsgs = processed.allMessages
+                            var repScore = 100
+                            for msg in allMsgs {
+                                switch msg.severity {
+                                case .critical: repScore -= 35
+                                case .important: repScore -= 15
+                                case .minor: repScore -= 5
+                                }
+                            }
+                            repScore = max(0, min(100, repScore))
                             if repScore >= 10 {
                                 let frame = currentRepSnapshot ?? self.renderAnnotatedFrame(
                                     pixelBuffer: pixelBuffer,
@@ -221,6 +232,7 @@ final class OfflineAnalysisManager: ObservableObject {
                                     peakTimestampMS: currentRepPeakTimestampMS > 0 ? currentRepPeakTimestampMS : tsMS,
                                     score: repScore,
                                     primaryMessage: processed.feedbackMessage,
+                                    allMessages: processed.allMessages,
                                     risk: processed.risk,
                                     snapshot: frame,
                                     angleSamples: currentRepAngleSamples
@@ -731,7 +743,8 @@ final class OfflineAnalysisManager: ObservableObject {
                                                      lastRepScore: Int,
                                                      feedbackMessage: String,
                                                      risk: RiskLevel,
-                                                     overlayColors: OverlayColors) {
+                                                     overlayColors: OverlayColors,
+                                                     allMessages: [(message: String, severity: RuleSeverity)]) {
         if Thread.isMainThread {
             processor.processLandmarks(landmarks, timestampMS: timestampMS)
             sessionSummary = processor.sessionSummary
@@ -740,10 +753,11 @@ final class OfflineAnalysisManager: ObservableObject {
                     processor.lastRepScore,
                     processor.feedbackMessage,
                     processor.currentRisk,
-                    processor.overlayColors)
+                    processor.overlayColors,
+                    processor.lastRepAllMessages)
         }
         
-        var result: (Double, Int, Int, String, RiskLevel, OverlayColors) = (0.0, 0, 0, "", .low, .neutral)
+        var result: (Double, Int, Int, String, RiskLevel, OverlayColors, [(message: String, severity: RuleSeverity)]) = (0.0, 0, 0, "", .low, .neutral, [])
         DispatchQueue.main.sync {
             processor.processLandmarks(landmarks, timestampMS: timestampMS)
             sessionSummary = processor.sessionSummary
@@ -752,9 +766,10 @@ final class OfflineAnalysisManager: ObservableObject {
                       processor.lastRepScore,
                       processor.feedbackMessage,
                       processor.currentRisk,
-                      processor.overlayColors)
+                      processor.overlayColors,
+                      processor.lastRepAllMessages)
         }
-        return (result.0, result.1, result.2, result.3, result.4, result.5)
+        return (result.0, result.1, result.2, result.3, result.4, result.5, result.6)
     }
     
     private func isEngagedForExercise(exercise: String, landmarks: [NormalizedLandmark]) -> Bool {

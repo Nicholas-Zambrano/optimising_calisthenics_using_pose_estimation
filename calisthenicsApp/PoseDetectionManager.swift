@@ -28,6 +28,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
     @Published var secondaryHint: String = ""
     @Published var sensitivity: FeedbackSensitivity = .normal
     @Published var lastRepScore: Int = 0
+    @Published var lastRepAllMessages: [(message: String, severity: RuleSeverity)] = []
     @Published var isPortraitMode: Bool = true
     @Published var feedbackFocus: FeedbackFocus = .armsOnly
     @Published var debugEnabled: Bool = false
@@ -274,6 +275,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
             secondaryHint = output.secondaryHint
             currentRisk = output.currentRisk
             lastRepScore = output.lastRepScore
+            lastRepAllMessages = engine.lastRepAllMessages
             isSessionComplete = output.isSessionComplete
             sessionSummary = output.sessionSummary
             debugText = output.debugText
@@ -305,6 +307,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
             secondaryHint = output.secondaryHint
             currentRisk = output.currentRisk
             lastRepScore = output.lastRepScore
+            lastRepAllMessages = engine.lastRepAllMessages
             isSessionComplete = output.isSessionComplete
             sessionSummary = output.sessionSummary
             debugText = output.debugText
@@ -327,6 +330,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
             secondaryHint = output.secondaryHint
             currentRisk = output.currentRisk
             lastRepScore = output.lastRepScore
+            lastRepAllMessages = engine.lastRepAllMessages
             isSessionComplete = output.isSessionComplete
             sessionSummary = output.sessionSummary
             debugText = output.debugText

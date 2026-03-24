@@ -1,6 +1,6 @@
 {
   "depthThreshold": 95,
-  "lockoutAngle": 170,
+  "lockoutAngle": 155,
   "kneeValgusThreshold": 15,
   "tempoMinSec": 0.6,
   "feedbackRules": [

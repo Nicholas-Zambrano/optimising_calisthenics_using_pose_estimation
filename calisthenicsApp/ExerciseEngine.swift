@@ -129,6 +129,7 @@ final class ExerciseEngine {
     private(set) var secondaryHint: String = ""
     private(set) var currentRisk: RiskLevel = .low
     private(set) var lastRepScore: Int = 0
+    private(set) var lastRepAllMessages: [(message: String, severity: RuleSeverity)] = []
     private(set) var isSessionComplete: Bool = false
     private(set) var sessionSummary: SessionSummary?
     private(set) var debugText: String = ""
@@ -503,6 +504,7 @@ final class ExerciseEngine {
                 matchedForScore = evaluateRules(values: repValues, postureMode: squatPostureMode, exerciseTag: "squat", rules: squatConfig.feedbackRules)
                 let repScore = scoreForRules(matchedForScore)
                 lastRepScore = repScore
+                lastRepAllMessages = dedupeRules(matchedForScore.sorted { severityRank($0.severity) > severityRank($1.severity) }).map { ($0.message, $0.severity) }
                 repScores.append(repScore)
                 overallScore = repScores.isEmpty ? 0 : Int(Double(repScores.reduce(0, +)) / Double(repScores.count))
 
@@ -757,6 +759,7 @@ final class ExerciseEngine {
                 let matchedForScore = evaluateRules(values: repValues, postureMode: .front, exerciseTag: "pullup", rules: pullUpConfig.feedbackRules)
                 let repScore = scoreForRules(matchedForScore)
                 lastRepScore = repScore
+                lastRepAllMessages = dedupeRules(matchedForScore.sorted { severityRank($0.severity) > severityRank($1.severity) }).map { ($0.message, $0.severity) }
                 repScores.append(repScore)
                 overallScore = repScores.isEmpty ? 0 : Int(Double(repScores.reduce(0, +)) / Double(repScores.count))
 
@@ -1173,6 +1176,7 @@ final class ExerciseEngine {
         let ruleMode: PushUpPostureMode = (feedbackFocus == .armsOnly ? .front : postureMode)
         let matchedRules = evaluateRules(values: repValues, postureMode: ruleMode, exerciseTag: "pushup", rules: pushUpConfig.feedbackRules)
         let repScore = scoreForRules(matchedRules)
+        lastRepAllMessages = dedupeRules(matchedRules.sorted { severityRank($0.severity) > severityRank($1.severity) }).map { ($0.message, $0.severity) }
         if debugEnabled {
             let ids = matchedRules.map { $0.id }.joined(separator: ",")
             print("[PushUpRep] values=\(repValues) matched=[\(ids)] score=\(repScore)")
