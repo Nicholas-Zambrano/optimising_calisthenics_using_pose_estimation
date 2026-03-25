@@ -27,7 +27,7 @@ struct MainMenuView: View {
     @State private var useFrontCamera: Bool = false
     @State private var selectedSquatViewMode: SquatViewMode = .side
     @State private var studyParticipantID: String = ""
-    @State private var studyCondition: String = "feedback"
+    @State private var studyCondition: String = "baseline"
     @State private var studyConditionOrder: Int = 1
     
     var body: some View {
@@ -143,8 +143,8 @@ struct MainMenuView: View {
                         .textFieldStyle(.roundedBorder)
                         .autocapitalization(.allCharacters)
                     Picker("Condition", selection: $studyCondition) {
-                        Text("Feedback").tag("feedback")
                         Text("Baseline").tag("baseline")
+                        Text("Feedback").tag("feedback")
                     }
                     .pickerStyle(.segmented)
                 }
@@ -162,7 +162,7 @@ struct MainMenuView: View {
                     .font(.headline)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 12)
-                    .background(settings.userStudyMode && studyCondition == "baseline" ? Color.gray : palette.accent)
+                    .background(palette.accent)
                     .foregroundColor(.black)
                     .cornerRadius(12)
             }

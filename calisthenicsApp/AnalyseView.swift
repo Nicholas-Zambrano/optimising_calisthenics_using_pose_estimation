@@ -3,47 +3,34 @@ import SwiftUI
 struct AnalyseView: View {
     @EnvironmentObject private var settings: AppSettings
     @State private var showOffline = false
-    @State private var showExercisePicker = false
-    @State private var selectedExercise: String = "Push-Up"
-    @State private var useFrontCamera: Bool = false
-    
+
     var body: some View {
         let palette = Theme.palette(choice: settings.themeChoice, darkMode: settings.darkMode)
         ZStack {
             palette.gradient.ignoresSafeArea()
-            
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Analyse Sessions")
-                    .font(.system(size: 30, weight: .heavy, design: .rounded))
-                    .foregroundColor(palette.textPrimary)
-                
-                Text("Choose live coaching or offline analysis")
-                    .foregroundColor(palette.textSecondary)
-                
-                Button {
-                    showExercisePicker = true
-                } label: {
-                    analyseCard(
-                        title: "Live Coaching",
-                        subtitle: "Real-time guidance & reps",
-                        icon: "camera.viewfinder",
-                        palette: palette
-                    )
+
+            VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Video Analysis")
+                        .font(.system(size: 30, weight: .heavy, design: .rounded))
+                        .foregroundColor(palette.textPrimary)
+                    Text("Upload a recording to get a full rep-by-rep breakdown with form feedback and snapshots.")
+                        .font(.subheadline)
+                        .foregroundColor(palette.textSecondary)
                 }
-                .buttonStyle(.plain)
-                
+
                 Button {
                     showOffline = true
                 } label: {
                     analyseCard(
-                        title: "Offline Analysis",
-                        subtitle: "Upload video & get summary",
+                        title: "Analyse a Recording",
+                        subtitle: "Rep timeline · Snapshots · Score",
                         icon: "film",
                         palette: palette
                     )
                 }
                 .buttonStyle(.plain)
-                
+
                 Spacer()
             }
             .padding()
@@ -51,55 +38,8 @@ struct AnalyseView: View {
         .sheet(isPresented: $showOffline) {
             OfflineAnalysisView()
         }
-        .sheet(isPresented: $showExercisePicker) {
-            exercisePickerSheet
-        }
     }
     
-    private var exercisePickerSheet: some View {
-        VStack(spacing: 16) {
-            Text("Start Live Session")
-                .font(.title2).bold()
-            
-            Picker("Exercise", selection: $selectedExercise) {
-                Text("Push-Up").tag("Push-Up")
-                Text("Squat").tag("Squat")
-                Text("Pull-Up").tag("Pull-Up")
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal)
-
-            Picker("Camera", selection: $useFrontCamera) {
-                Text("Back").tag(false)
-                Text("Front").tag(true)
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal)
-            
-            NavigationLink(destination: ExerciseSessionView(
-                selectedExercise: selectedExercise,
-                targetReps: settings.targetReps,
-                sensitivity: settings.sensitivity,
-                focus: settings.focus,
-                audioEnabled: settings.audioEnabled,
-                useFrontCamera: useFrontCamera,
-                squatViewMode: .auto
-            )) {
-                Text("Start")
-                    .font(.headline)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 12)
-                    .background(Color.black)
-                    .foregroundColor(.white)
-                    .cornerRadius(12)
-            }
-            
-            Button("Cancel") { showExercisePicker = false }
-                .foregroundColor(.secondary)
-        }
-        .padding()
-        .presentationDetents([.medium])
-    }
     
     private func analyseCard(title: String, subtitle: String, icon: String, palette: ThemePalette) -> some View {
         HStack(spacing: 14) {

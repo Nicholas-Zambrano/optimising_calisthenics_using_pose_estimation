@@ -329,6 +329,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
                 enableDebug: debugEnabled,
                 viewMode: squatViewMode
             )
+            let prevRepCountSq = repCount
             repCount = output.repCount
             cleanReps = output.cleanReps
             overallScore = output.overallScore
@@ -342,7 +343,32 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
             isSessionComplete = output.isSessionComplete
             sessionSummary = output.sessionSummary
             debugText = output.debugText
-            
+
+            if isStudyModeActive && output.repCount > prevRepCountSq {
+                let allMsgs = engine.lastRepAllMessages
+                let ruleIDs = engine.lastRepRuleIDs
+                let riskStr: String = allMsgs.contains(where: { $0.severity == .critical }) ? "critical" :
+                    (allMsgs.contains(where: { $0.severity == .important }) ? "important" : "clean")
+                StudyLogger.shared.logRep(StudyRepRow(
+                    participantID: studyParticipantID,
+                    condition: studyCondition,
+                    conditionOrder: studyConditionOrder,
+                    repNumber: output.repCount,
+                    repScore: output.lastRepScore,
+                    riskLevel: riskStr,
+                    criticalErrors: allMsgs.filter { $0.severity == .critical }.count,
+                    importantErrors: allMsgs.filter { $0.severity == .important }.count,
+                    backAngleCritical: ruleIDs.contains("leaning_forward_critical") ? 1 : 0,
+                    elbowFlareCritical: ruleIDs.contains("knees_caving") ? 1 : 0,
+                    hipSagCritical: ruleIDs.contains("pelvic_tilt") ? 1 : 0,
+                    shallowDepth: ruleIDs.contains("shallow_depth") ? 1 : 0,
+                    tempoFast: ruleIDs.contains("tempo_too_fast") ? 1 : 0,
+                    depthProgress: engine.lastRepDepthProgress,
+                    repDurationSec: engine.lastRepDurationSec,
+                    timestampMS: timestampMS
+                ))
+            }
+
             if let speak = output.speakMessage, isCoachingActive {
                 speakFeedback(speak, force: true)
             }
@@ -352,6 +378,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
                 landmarks: landmarks,
                 timestampMS: timestampMS
             )
+            let prevRepCountPu = repCount
             repCount = output.repCount
             cleanReps = output.cleanReps
             overallScore = output.overallScore
@@ -365,6 +392,31 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
             isSessionComplete = output.isSessionComplete
             sessionSummary = output.sessionSummary
             debugText = output.debugText
+
+            if isStudyModeActive && output.repCount > prevRepCountPu {
+                let allMsgs = engine.lastRepAllMessages
+                let ruleIDs = engine.lastRepRuleIDs
+                let riskStr: String = allMsgs.contains(where: { $0.severity == .critical }) ? "critical" :
+                    (allMsgs.contains(where: { $0.severity == .important }) ? "important" : "clean")
+                StudyLogger.shared.logRep(StudyRepRow(
+                    participantID: studyParticipantID,
+                    condition: studyCondition,
+                    conditionOrder: studyConditionOrder,
+                    repNumber: output.repCount,
+                    repScore: output.lastRepScore,
+                    riskLevel: riskStr,
+                    criticalErrors: allMsgs.filter { $0.severity == .critical }.count,
+                    importantErrors: allMsgs.filter { $0.severity == .important }.count,
+                    backAngleCritical: ruleIDs.contains("back_angle_critical") ? 1 : 0,
+                    elbowFlareCritical: ruleIDs.contains("elbow_flare_critical") ? 1 : 0,
+                    hipSagCritical: ruleIDs.contains("hip_sag") ? 1 : 0,
+                    shallowDepth: ruleIDs.contains("shallow_depth") ? 1 : 0,
+                    tempoFast: ruleIDs.contains("tempo_too_fast") ? 1 : 0,
+                    depthProgress: engine.lastRepDepthProgress,
+                    repDurationSec: engine.lastRepDurationSec,
+                    timestampMS: timestampMS
+                ))
+            }
         default: break
         }
     }
