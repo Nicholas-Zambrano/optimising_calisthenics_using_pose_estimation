@@ -95,6 +95,7 @@ struct OverlayColors {
     var torso: Color
     var leftLeg: Color
     var rightLeg: Color
+    var hasCritical: Bool = false
     
     static let neutral = OverlayColors(
         leftArm: .white.opacity(0.6),

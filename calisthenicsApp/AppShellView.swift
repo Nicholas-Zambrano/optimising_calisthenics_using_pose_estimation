@@ -16,11 +16,11 @@ struct AppShellView: View {
             }
             
             NavigationStack {
-                AnalyzeView()
+                AnalyseView()
             }
             .tabItem {
                 Image(systemName: "waveform.path.ecg")
-                Text("Analyze")
+                Text("Analyse")
             }
             
             NavigationStack {

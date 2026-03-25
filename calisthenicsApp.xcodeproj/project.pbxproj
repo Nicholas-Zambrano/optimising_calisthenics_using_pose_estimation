@@ -14,7 +14,7 @@
 		6A62E1162F4D7051005EDB94 /* ExerciseEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A62E1152F4D7051005EDB94 /* ExerciseEngine.swift */; };
 		6A62E1182F4D7F6D005EDB94 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A62E1172F4D7F6D005EDB94 /* AppSettings.swift */; };
 		6A62E11A2F4D7F7C005EDB94 /* AppShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A62E1192F4D7F7C005EDB94 /* AppShellView.swift */; };
-		6A62E11C2F4D7F88005EDB94 /* AnalyzeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A62E11B2F4D7F88005EDB94 /* AnalyzeView.swift */; };
+		6A62E11C2F4D7F88005EDB94 /* AnalyseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A62E11B2F4D7F88005EDB94 /* AnalyseView.swift */; };
 		6A62E11E2F4D7F99005EDB94 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A62E11D2F4D7F99005EDB94 /* HistoryView.swift */; };
 		6A62E1202F4D7FAF005EDB94 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A62E11F2F4D7FAF005EDB94 /* SettingsView.swift */; };
 		6A62E1222F4D7FBA005EDB94 /* OfflineAnalysisManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A62E1212F4D7FBA005EDB94 /* OfflineAnalysisManager.swift */; };
@@ -36,6 +36,8 @@
 		6AF3E8AF2F228A63003FA03A /* LandmarkOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AF3E8AE2F228A5B003FA03A /* LandmarkOverlay.swift */; };
 		6AF3E8B22F22A848003FA03A /* pose_landmarker_full.task in Resources */ = {isa = PBXBuildFile; fileRef = 6AF3E8B12F22A848003FA03A /* pose_landmarker_full.task */; };
 		6AF3E8B42F22D875003FA03A /* BiometricEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AF3E8B32F22D86D003FA03A /* BiometricEvaluator.swift */; };
+		AA10000001AA0001000000AA /* StudyLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA10000002AA0001000000AA /* StudyLogger.swift */; };
+		AA10000003AA0001000000AA /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA10000004AA0001000000AA /* ShareSheet.swift */; };
 		9BEB33F575C3C48579557F93 /* Pods_calisthenicsAppTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DF0932EFEA39DC0BDF5EDA13 /* Pods_calisthenicsAppTests.framework */; };
 		B112040D6B4E211BC32BEE02 /* Pods_calisthenicsApp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 07CFE150623D59E254E80DF5 /* Pods_calisthenicsApp.framework */; };
 		DEFBCF0245AA93CC272D47CF /* Pods_calisthenicsApp_calisthenicsAppUITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 431A15496C0FF1BA86F07C07 /* Pods_calisthenicsApp_calisthenicsAppUITests.framework */; };
@@ -70,7 +72,7 @@
 		6A62E1152F4D7051005EDB94 /* ExerciseEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseEngine.swift; sourceTree = "<group>"; };
 		6A62E1172F4D7F6D005EDB94 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		6A62E1192F4D7F7C005EDB94 /* AppShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellView.swift; sourceTree = "<group>"; };
-		6A62E11B2F4D7F88005EDB94 /* AnalyzeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyzeView.swift; sourceTree = "<group>"; };
+		6A62E11B2F4D7F88005EDB94 /* AnalyseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyseView.swift; sourceTree = "<group>"; };
 		6A62E11D2F4D7F99005EDB94 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		6A62E11F2F4D7FAF005EDB94 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		6A62E1212F4D7FBA005EDB94 /* OfflineAnalysisManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineAnalysisManager.swift; sourceTree = "<group>"; };
@@ -96,6 +98,8 @@
 		6AF3E8B02F228B93003FA03A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		6AF3E8B12F22A848003FA03A /* pose_landmarker_full.task */ = {isa = PBXFileReference; lastKnownFileType = file; path = pose_landmarker_full.task; sourceTree = "<group>"; };
 		6AF3E8B32F22D86D003FA03A /* BiometricEvaluator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiometricEvaluator.swift; sourceTree = "<group>"; };
+		AA10000002AA0001000000AA /* StudyLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudyLogger.swift; sourceTree = "<group>"; };
+		AA10000004AA0001000000AA /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
 		6F3A4C4CCF38A9146AA53267 /* Pods-calisthenicsApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-calisthenicsApp.release.xcconfig"; path = "Target Support Files/Pods-calisthenicsApp/Pods-calisthenicsApp.release.xcconfig"; sourceTree = "<group>"; };
 		A5A761A7A4D0ED6147A4A02A /* Pods-calisthenicsAppTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-calisthenicsAppTests.release.xcconfig"; path = "Target Support Files/Pods-calisthenicsAppTests/Pods-calisthenicsAppTests.release.xcconfig"; sourceTree = "<group>"; };
 		DF0932EFEA39DC0BDF5EDA13 /* Pods_calisthenicsAppTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_calisthenicsAppTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -203,13 +207,15 @@
 				6A62E1152F4D7051005EDB94 /* ExerciseEngine.swift */,
 				6A62E1172F4D7F6D005EDB94 /* AppSettings.swift */,
 				6A62E1192F4D7F7C005EDB94 /* AppShellView.swift */,
-				6A62E11B2F4D7F88005EDB94 /* AnalyzeView.swift */,
+				6A62E11B2F4D7F88005EDB94 /* AnalyseView.swift */,
 				6A62E11D2F4D7F99005EDB94 /* HistoryView.swift */,
 				6A62E11F2F4D7FAF005EDB94 /* SettingsView.swift */,
 				6A62E1212F4D7FBA005EDB94 /* OfflineAnalysisManager.swift */,
 				6A62E1232F4D7FBE005EDB94 /* OfflineAnalysisView.swift */,
 				6A62E1252F4D8134005EDB94 /* WorkoutHistoryStore.swift */,
 				6A62E1272F4D8410005EDB94 /* Theme.swift */,
+				AA10000002AA0001000000AA /* StudyLogger.swift */,
+				AA10000004AA0001000000AA /* ShareSheet.swift */,
 			);
 			path = calisthenicsApp;
 			sourceTree = "<group>";
@@ -465,7 +471,7 @@
 				6AF3E8B42F22D875003FA03A /* BiometricEvaluator.swift in Sources */,
 				6AF3E89E2F22670F003FA03A /* ExerciseSessionView.swift in Sources */,
 				6A62E11A2F4D7F7C005EDB94 /* AppShellView.swift in Sources */,
-				6A62E11C2F4D7F88005EDB94 /* AnalyzeView.swift in Sources */,
+				6A62E11C2F4D7F88005EDB94 /* AnalyseView.swift in Sources */,
 				6A62E1222F4D7FBA005EDB94 /* OfflineAnalysisManager.swift in Sources */,
 				6A62E1282F4D8410005EDB94 /* Theme.swift in Sources */,
 				6A62E1032F4D6B7D005EDB94 /* ExerciseDefinitions.swift in Sources */,
@@ -474,6 +480,8 @@
 				6A62E11E2F4D7F99005EDB94 /* HistoryView.swift in Sources */,
 				6A62E1242F4D7FBE005EDB94 /* OfflineAnalysisView.swift in Sources */,
 				6AF3E8AF2F228A63003FA03A /* LandmarkOverlay.swift in Sources */,
+				AA10000001AA0001000000AA /* StudyLogger.swift in Sources */,
+				AA10000003AA0001000000AA /* ShareSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

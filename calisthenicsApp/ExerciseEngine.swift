@@ -131,6 +131,9 @@ final class ExerciseEngine {
     private(set) var currentRisk: RiskLevel = .low
     private(set) var lastRepScore: Int = 0
     private(set) var lastRepAllMessages: [(message: String, severity: RuleSeverity)] = []
+    private(set) var lastRepDurationSec: Double = 0
+    private(set) var lastRepRuleIDs: Set<String> = []
+    private(set) var lastRepDepthProgress: Double = 0
     private(set) var isSessionComplete: Bool = false
     private(set) var sessionSummary: SessionSummary?
     private(set) var debugText: String = ""
@@ -1196,6 +1199,9 @@ final class ExerciseEngine {
         let matchedRules = evaluateRules(values: repValues, postureMode: ruleMode, exerciseTag: "pushup", rules: pushUpConfig.feedbackRules)
         let repScore = scoreForRules(matchedRules)
         lastRepAllMessages = dedupeRules(matchedRules.sorted { severityRank($0.severity) > severityRank($1.severity) }).map { ($0.message, $0.severity) }
+        lastRepDurationSec = durationSec
+        lastRepRuleIDs = Set(matchedRules.map { $0.id })
+        lastRepDepthProgress = repDepthProgress
         let ids = matchedRules.map { $0.id }.joined(separator: ",")
         print(String(format: "[PushUpRep] mode=%@ focus=%@ backAngle=%.1f elbow=%.1f matched=[%@] score=%d",
                      "\(ruleMode)", "\(feedbackFocus)", repMinBackAngle, repMinElbowAngle, ids, repScore))
@@ -1544,6 +1550,7 @@ final class ExerciseEngine {
         if postureMode == .side {
             if metrics.backAngle < 155 {
                 colors.torso = .red
+                colors.hasCritical = true
             } else if metrics.backAngle < 165 {
                 colors.torso = .yellow
             } else {
@@ -1553,6 +1560,7 @@ final class ExerciseEngine {
             if metrics.elbowFlare > 75 {
                 colors.leftArm = .red
                 colors.rightArm = .red
+                colors.hasCritical = true
             } else if metrics.elbowFlare > 60 {
                 colors.leftArm = .yellow
                 colors.rightArm = .yellow
@@ -1571,6 +1579,7 @@ final class ExerciseEngine {
             if frontMetrics.elbowFlareRatio > flareRed {
                 colors.leftArm = .red
                 colors.rightArm = .red
+                colors.hasCritical = true
             } else if frontMetrics.elbowFlareRatio > flareYellow {
                 colors.leftArm = .yellow
                 colors.rightArm = .yellow
@@ -1582,6 +1591,7 @@ final class ExerciseEngine {
             if feedbackFocus == .fullBody && !isPortraitMode {
                 if frontMetrics.hipDropRatio > hipRed {
                     colors.torso = .red
+                    colors.hasCritical = true
                 } else if frontMetrics.hipDropRatio > hipYellow {
                     colors.torso = .yellow
                 } else {

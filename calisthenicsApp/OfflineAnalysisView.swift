@@ -85,9 +85,9 @@ struct OfflineAnalysisView: View {
                         
                         Button {
                             guard let url = selectedURL else { return }
-                            manager.analyzeVideo(url: url, exercise: selectedExercise, settings: settings)
+                            manager.analyseVideo(url: url, exercise: selectedExercise, settings: settings)
                         } label: {
-                            Text(manager.isRunning ? "Analyzing..." : "Start Analysis")
+                            Text(manager.isRunning ? "Analysing..." : "Start Analysis")
                                 .font(.headline)
                                 .frame(maxWidth: .infinity)
                                 .padding()
@@ -371,10 +371,11 @@ struct OfflineAnalysisView: View {
                     return
                 }
                 let player = AVPlayer(url: url)
-                let peakTime = CMTime(value: CMTimeValue(rep.peakTimestampMS), timescale: 1000)
-                player.seek(to: peakTime,
-                            toleranceBefore: CMTime(seconds: 0.5, preferredTimescale: 600),
-                            toleranceAfter: CMTime(seconds: 0.5, preferredTimescale: 600))
+                let seekMS = rep.worstFormTimestampMS > 0 ? rep.worstFormTimestampMS : rep.peakTimestampMS
+                let seekTime = CMTime(value: CMTimeValue(seekMS), timescale: 1000)
+                player.seek(to: seekTime,
+                            toleranceBefore: CMTime(seconds: 0.3, preferredTimescale: 600),
+                            toleranceAfter: CMTime(seconds: 0.3, preferredTimescale: 600))
                 repPlayer = player
             }
         }

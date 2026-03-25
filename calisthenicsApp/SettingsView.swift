@@ -25,6 +25,10 @@ struct SettingsView: View {
                 Section(header: Text("Debug")) {
                     Toggle("Show Debug Metrics", isOn: $settings.debugEnabled)
                 }
+
+                Section(header: Text("Research"), footer: Text("When enabled, a pre-session form collects participant ID and condition before each session, and a CSV export button appears at session end.")) {
+                    Toggle("User Study Mode", isOn: $settings.userStudyMode)
+                }
                 
                 Section(header: Text("Targets")) {
                     Stepper(value: $settings.targetReps, in: 5...50, step: 1) {

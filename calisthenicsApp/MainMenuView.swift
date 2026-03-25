@@ -26,6 +26,9 @@ struct MainMenuView: View {
     @State private var selectedFocus: FeedbackFocus = .armsOnly
     @State private var useFrontCamera: Bool = false
     @State private var selectedSquatViewMode: SquatViewMode = .side
+    @State private var studyParticipantID: String = ""
+    @State private var studyCondition: String = "feedback"
+    @State private var studyConditionOrder: Int = 1
     
     var body: some View {
         let palette = Theme.palette(choice: settings.themeChoice, darkMode: settings.darkMode)
@@ -74,9 +77,13 @@ struct MainMenuView: View {
                     targetReps: selectedReps,
                     sensitivity: selectedSensitivity,
                     focus: selectedFocus,
-                    audioEnabled: settings.audioEnabled,
+                    audioEnabled: settings.userStudyMode && studyCondition == "baseline" ? false : settings.audioEnabled,
                     useFrontCamera: useFrontCamera,
-                    squatViewMode: selectedSquatViewMode
+                    squatViewMode: selectedSquatViewMode,
+                    participantID: studyParticipantID,
+                    studyCondition: studyCondition,
+                    studyConditionOrder: studyConditionOrder,
+                    baselineMode: settings.userStudyMode && studyCondition == "baseline"
                 ),
                 isActive: $navigateToSession
             ) { EmptyView() }
@@ -98,14 +105,6 @@ struct MainMenuView: View {
                     .font(.title)
                     .bold()
             }
-            .padding(.horizontal)
-            
-            Picker("Sensitivity", selection: $selectedSensitivity) {
-                ForEach(FeedbackSensitivity.allCases, id: \.self) { level in
-                    Text(level.rawValue).tag(level)
-                }
-            }
-            .pickerStyle(.segmented)
             .padding(.horizontal)
             
             if selectedExercise == "Push-Up" {
@@ -135,6 +134,23 @@ struct MainMenuView: View {
             .pickerStyle(.segmented)
             .padding(.horizontal)
             
+            if settings.userStudyMode {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Study Setup")
+                        .font(.caption.bold())
+                        .foregroundColor(.secondary)
+                    TextField("Participant ID (e.g. P01)", text: $studyParticipantID)
+                        .textFieldStyle(.roundedBorder)
+                        .autocapitalization(.allCharacters)
+                    Picker("Condition", selection: $studyCondition) {
+                        Text("Feedback").tag("feedback")
+                        Text("Baseline").tag("baseline")
+                    }
+                    .pickerStyle(.segmented)
+                }
+                .padding(.horizontal)
+            }
+
             Button {
                 showRepPicker = false
                 settings.targetReps = selectedReps
@@ -142,14 +158,15 @@ struct MainMenuView: View {
                 settings.focus = selectedFocus
                 navigateToSession = true
             } label: {
-                Text("Start Session")
+                Text(settings.userStudyMode ? "Start Study Session" : "Start Session")
                     .font(.headline)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 12)
-                    .background(palette.accent)
+                    .background(settings.userStudyMode && studyCondition == "baseline" ? Color.gray : palette.accent)
                     .foregroundColor(.black)
                     .cornerRadius(12)
             }
+            .disabled(settings.userStudyMode && studyParticipantID.trimmingCharacters(in: .whitespaces).isEmpty)
             
             Button {
                 showRepPicker = false
@@ -159,7 +176,7 @@ struct MainMenuView: View {
             }
         }
         .padding()
-        .presentationDetents([.medium])
+        .presentationDetents(settings.userStudyMode ? [.large] : [.medium])
     }
 
     private func statChip(title: String, value: String, palette: ThemePalette) -> some View {

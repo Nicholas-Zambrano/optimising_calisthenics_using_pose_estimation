@@ -17,6 +17,7 @@ final class OfflineAnalysisManager: ObservableObject {
         let risk: RiskLevel
         let snapshot: UIImage?
         let angleSamples: [Double]
+        let worstFormTimestampMS: Int
         
         var timestampLabel: String {
             let totalSec = max(0, timestampMS / 1000)
@@ -56,7 +57,7 @@ final class OfflineAnalysisManager: ObservableObject {
         isCancelled = true
     }
     
-    func analyzeVideo(url: URL, exercise: String, settings: AppSettings) {
+    func analyseVideo(url: URL, exercise: String, settings: AppSettings) {
         isCancelled = false
         progress = 0
         sessionSummary = nil
@@ -154,16 +155,19 @@ final class OfflineAnalysisManager: ObservableObject {
             }
             
             var lastProcessedMS: Int = 0
-            let frameIntervalMS = 150
+            let frameIntervalMS = 100
             var lastRepCount = 0
             var currentRepMaxDepth: Double = 0.0
             var currentRepSnapshot: UIImage?
+            var currentRepWorstRiskFrame: UIImage?
+            var currentRepWorstRiskTimestampMS: Int = 0
             var currentRepPeakTimestampMS: Int = 0
             var currentRepAngleSamples: [Double] = []
             var lastLogMS: Int = 0
+            var lastRepCompletionMS: Int = -1000
             
             DispatchQueue.main.async {
-                self.status = "Analyzing..."
+                self.status = "Analysing..."
                 self.logLines.append("Analysis started")
             }
             
@@ -205,6 +209,17 @@ final class OfflineAnalysisManager: ObservableObject {
                                 overlayColors: processed.overlayColors
                             )
                         }
+                        if processed.overlayColors.hasCritical
+                            && processed.depthProgress > 0.08
+                            && currentRepWorstRiskFrame == nil
+                            && (tsMS - lastRepCompletionMS) > 600 {
+                            currentRepWorstRiskFrame = self.renderAnnotatedFrame(
+                                pixelBuffer: pixelBuffer,
+                                landmarks: landmarks,
+                                overlayColors: processed.overlayColors
+                            )
+                            currentRepWorstRiskTimestampMS = tsMS
+                        }
                         if let angle = self.primaryAngle(exercise: exercise, landmarks: landmarks),
                            processed.depthProgress > 0.05 || (!currentRepAngleSamples.isEmpty) {
                             currentRepAngleSamples.append(angle)
@@ -223,11 +238,15 @@ final class OfflineAnalysisManager: ObservableObject {
                             }
                             repScore = max(0, min(100, repScore))
                             if repScore >= 10 {
-                                let frame = currentRepSnapshot ?? self.renderAnnotatedFrame(
+                                let hasCritical = allMsgs.contains(where: { $0.severity == .critical })
+                            let frame = (hasCritical ? currentRepWorstRiskFrame : nil)
+                                ?? currentRepSnapshot
+                                ?? self.renderAnnotatedFrame(
                                     pixelBuffer: pixelBuffer,
                                     landmarks: landmarks,
                                     overlayColors: processed.overlayColors
                                 )
+                                let worstTS = hasCritical && currentRepWorstRiskTimestampMS > 0 ? currentRepWorstRiskTimestampMS : (currentRepPeakTimestampMS > 0 ? currentRepPeakTimestampMS : tsMS)
                                 let summary = RepSummary(
                                     repIndex: processed.repCount,
                                     timestampMS: tsMS,
@@ -237,7 +256,8 @@ final class OfflineAnalysisManager: ObservableObject {
                                     allMessages: processed.allMessages,
                                     risk: processed.risk,
                                     snapshot: frame,
-                                    angleSamples: currentRepAngleSamples
+                                    angleSamples: currentRepAngleSamples,
+                                    worstFormTimestampMS: worstTS
                                 )
                                 DispatchQueue.main.async {
                                     self.repSummaries.append(summary)
@@ -259,8 +279,11 @@ final class OfflineAnalysisManager: ObservableObject {
                                     }
                                 }
                             }
+                            lastRepCompletionMS = tsMS
                             currentRepMaxDepth = 0.0
                             currentRepSnapshot = nil
+                            currentRepWorstRiskFrame = nil
+                            currentRepWorstRiskTimestampMS = 0
                             currentRepPeakTimestampMS = 0
                             currentRepAngleSamples = []
                         }

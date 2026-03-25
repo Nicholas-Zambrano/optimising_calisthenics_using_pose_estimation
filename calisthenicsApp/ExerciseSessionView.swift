@@ -17,12 +17,18 @@ struct ExerciseSessionView: View {
     let audioEnabled: Bool
     let useFrontCamera: Bool
     let squatViewMode: SquatViewMode
+    var participantID: String = ""
+    var studyCondition: String = "feedback"
+    var studyConditionOrder: Int = 1
+    var baselineMode: Bool = false
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var historyStore: WorkoutHistoryStore
     @EnvironmentObject private var settings: AppSettings
     @StateObject private var poseManager = PoseDetectionManager()
     @State private var countdown = 10
     @State private var isCountingDown = true
+    @State private var showShareSheet = false
+    @State private var exportURL: URL?
 
     var body: some View {
         let palette = Theme.palette(choice: settings.themeChoice, darkMode: settings.darkMode)
@@ -33,17 +39,19 @@ struct ExerciseSessionView: View {
             if !isCountingDown, !poseManager.isSessionComplete, let currentLandmarks = poseManager.latestLandmarks {
                 LandmarkOverlayView(
                     landmarks: currentLandmarks,
-                    overlayColors: poseManager.overlayColors,
+                    overlayColors: baselineMode ? .neutral : poseManager.overlayColors,
                     mirrorX: poseManager.isFrontCamera
                 ).ignoresSafeArea()
-                
-                InstructionOverlayView(
-                    landmarks: currentLandmarks,
-                    primary: poseManager.feedbackMessage,
-                    secondary: poseManager.secondaryHint,
-                    mirrorX: poseManager.isFrontCamera
-                )
-                .ignoresSafeArea()
+
+                if !baselineMode {
+                    InstructionOverlayView(
+                        landmarks: currentLandmarks,
+                        primary: poseManager.feedbackMessage,
+                        secondary: poseManager.secondaryHint,
+                        mirrorX: poseManager.isFrontCamera
+                    )
+                    .ignoresSafeArea()
+                }
             }
             
             VStack {
@@ -84,44 +92,46 @@ struct ExerciseSessionView: View {
                 if !isCountingDown {
                     HStack(spacing: 16) {
                         statCard(title: "REPS", value: "\(poseManager.repCount)", palette: palette)
-                        VStack {
-                            Text("\(poseManager.overallScore)%")
-                                .font(.system(size: 30, weight: .black))
-                                .foregroundColor(scoreColor)
-                            Text("QUALITY").font(.caption).bold().foregroundColor(palette.textPrimary)
-                            Text("Last: \(poseManager.lastRepScore)%")
-                                .font(.caption2)
-                                .foregroundColor(palette.textSecondary)
+                        if !baselineMode {
+                            VStack {
+                                Text("\(poseManager.overallScore)%")
+                                    .font(.system(size: 30, weight: .black))
+                                    .foregroundColor(scoreColor)
+                                Text("QUALITY").font(.caption).bold().foregroundColor(palette.textPrimary)
+                                Text("Last: \(poseManager.lastRepScore)%")
+                                    .font(.caption2)
+                                    .foregroundColor(palette.textSecondary)
+                            }
+                            .frame(width: 120, height: 90)
+                            .background(palette.card.opacity(0.9))
+                            .cornerRadius(16)
                         }
-                        .frame(width: 120, height: 90)
-                        .background(palette.card.opacity(0.9))
-                        .cornerRadius(16)
                     }
                     .padding(.top, 20)
-                    
-                    VStack(spacing: 6) {
-                        Text("DEPTH")
-                            .font(.caption).bold()
-                            .foregroundColor(palette.textPrimary)
-                        GeometryReader { geo in
-                            ZStack(alignment: .leading) {
-                                Capsule().fill(Color.white.opacity(0.2))
-                                Capsule()
-                                    .fill(depthColor)
-                                    .frame(width: max(8, geo.size.width * poseManager.depthProgress))
-                            }
-                        }
-                        .frame(height: 10)
-                        .frame(width: 180)
-                    }
-                    .padding(.top, 8)
 
-                    
+                    if !baselineMode {
+                        VStack(spacing: 6) {
+                            Text("DEPTH")
+                                .font(.caption).bold()
+                                .foregroundColor(palette.textPrimary)
+                            GeometryReader { geo in
+                                ZStack(alignment: .leading) {
+                                    Capsule().fill(Color.white.opacity(0.2))
+                                    Capsule()
+                                        .fill(depthColor)
+                                        .frame(width: max(8, geo.size.width * poseManager.depthProgress))
+                                }
+                            }
+                            .frame(height: 10)
+                            .frame(width: 180)
+                        }
+                        .padding(.top, 8)
+                    }
                 }
 
                 Spacer()
                 
-                if !isCountingDown {
+                if !isCountingDown && !baselineMode {
                     VStack(spacing: 6) {
                         Text(poseManager.feedbackMessage)
                             .font(.headline)
@@ -216,6 +226,23 @@ struct ExerciseSessionView: View {
                     .background(palette.card.opacity(0.95))
                     .cornerRadius(16)
                     
+                    if settings.userStudyMode {
+                        Button {
+                            if let url = StudyLogger.shared.exportURL(participantID: participantID, condition: studyCondition) {
+                                exportURL = url
+                                showShareSheet = true
+                            }
+                        } label: {
+                            Label("Export CSV", systemImage: "square.and.arrow.up")
+                                .font(.headline)
+                                .padding(.horizontal, 24)
+                                .padding(.vertical, 12)
+                                .background(Color.green)
+                                .foregroundColor(.black)
+                                .cornerRadius(12)
+                        }
+                    }
+
                     NavigationLink(destination: MainMenuView()) {
                         Text("Back to Home")
                             .font(.headline)
@@ -227,6 +254,11 @@ struct ExerciseSessionView: View {
                     }
                 }
                 .padding()
+                .sheet(isPresented: $showShareSheet) {
+                    if let url = exportURL {
+                        ShareSheet(items: [url])
+                    }
+                }
                 .onAppear {
                     historyStore.addSession(
                         exercise: selectedExercise,
@@ -319,8 +351,13 @@ struct ExerciseSessionView: View {
         poseManager.resetForNewSession(targetReps: targetReps, sensitivity: sensitivity)
         poseManager.feedbackFocus = focus
         poseManager.isDetectionPaused = true
+        poseManager.studyParticipantID = participantID
+        poseManager.studyCondition = studyCondition
+        poseManager.studyConditionOrder = studyConditionOrder
+        poseManager.isStudyModeActive = settings.userStudyMode
+        if settings.userStudyMode { StudyLogger.shared.clear() }
         poseManager.checkPermissionAndStart()
-        
+
         Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
             DispatchQueue.main.async {
                 if countdown > 1 {
@@ -329,8 +366,10 @@ struct ExerciseSessionView: View {
                     timer.invalidate()
                     isCountingDown = false
                     poseManager.isDetectionPaused = false
-                    poseManager.isCoachingActive = true
-                    poseManager.speakFeedback("Starting \(selectedExercise) analysis")
+                    if !self.baselineMode {
+                        poseManager.isCoachingActive = audioEnabled
+                        poseManager.speakFeedback("Starting \(selectedExercise) analysis")
+                    }
                 }
             }
         }

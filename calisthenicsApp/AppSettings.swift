@@ -23,6 +23,9 @@ final class AppSettings: ObservableObject {
     @Published var debugEnabled: Bool {
         didSet { UserDefaults.standard.set(debugEnabled, forKey: "debugEnabled") }
     }
+    @Published var userStudyMode: Bool {
+        didSet { UserDefaults.standard.set(userStudyMode, forKey: "userStudyMode") }
+    }
     
     init() {
         if UserDefaults.standard.object(forKey: "audioEnabled") == nil {
@@ -48,5 +51,6 @@ final class AppSettings: ObservableObject {
         } else {
             self.debugEnabled = UserDefaults.standard.bool(forKey: "debugEnabled")
         }
+        self.userStudyMode = UserDefaults.standard.bool(forKey: "userStudyMode")
     }
 }

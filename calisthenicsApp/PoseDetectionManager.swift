@@ -34,6 +34,11 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
     @Published var debugEnabled: Bool = false
     @Published var repMetrics: [RepMetric] = []
 
+    var studyParticipantID: String = ""
+    var studyCondition: String = "feedback"
+    var studyConditionOrder: Int = 1
+    var isStudyModeActive: Bool = false
+
     private let sessionQueue = DispatchQueue(label: "com.calisthenics.sessionQueue")
     private let videoQueue = DispatchQueue(label: "com.calisthenics.videoQueue")
     @Published var squatViewMode: SquatViewMode = .auto
@@ -266,6 +271,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
                 enableDebug: debugEnabled
             )
             
+            let prevRepCount = repCount
             repCount = output.repCount
             cleanReps = output.cleanReps
             overallScore = output.overallScore
@@ -279,7 +285,32 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
             isSessionComplete = output.isSessionComplete
             sessionSummary = output.sessionSummary
             debugText = output.debugText
-            
+
+            if isStudyModeActive && output.repCount > prevRepCount {
+                let allMsgs = engine.lastRepAllMessages
+                let ruleIDs = engine.lastRepRuleIDs
+                let riskStr: String = allMsgs.contains(where: { $0.severity == .critical }) ? "critical" :
+                    (allMsgs.contains(where: { $0.severity == .important }) ? "important" : "clean")
+                StudyLogger.shared.logRep(StudyRepRow(
+                    participantID: studyParticipantID,
+                    condition: studyCondition,
+                    conditionOrder: studyConditionOrder,
+                    repNumber: output.repCount,
+                    repScore: output.lastRepScore,
+                    riskLevel: riskStr,
+                    criticalErrors: allMsgs.filter { $0.severity == .critical }.count,
+                    importantErrors: allMsgs.filter { $0.severity == .important }.count,
+                    backAngleCritical: ruleIDs.contains("back_angle_critical") ? 1 : 0,
+                    elbowFlareCritical: ruleIDs.contains("elbow_flare_side") || ruleIDs.contains("elbow_flare_critical") ? 1 : 0,
+                    hipSagCritical: ruleIDs.contains("hip_sag") ? 1 : 0,
+                    shallowDepth: ruleIDs.contains("shallow_depth") ? 1 : 0,
+                    tempoFast: ruleIDs.contains("tempo_too_fast") ? 1 : 0,
+                    depthProgress: engine.lastRepDepthProgress,
+                    repDurationSec: engine.lastRepDurationSec,
+                    timestampMS: timestampMS
+                ))
+            }
+
             if let speak = output.speakMessage, isCoachingActive {
                 speakFeedback(speak, force: true)
             }

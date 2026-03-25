@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct AnalyzeView: View {
+struct AnalyseView: View {
     @EnvironmentObject private var settings: AppSettings
     @State private var showOffline = false
     @State private var showExercisePicker = false
@@ -13,7 +13,7 @@ struct AnalyzeView: View {
             palette.gradient.ignoresSafeArea()
             
             VStack(alignment: .leading, spacing: 16) {
-                Text("Analyze Sessions")
+                Text("Analyse Sessions")
                     .font(.system(size: 30, weight: .heavy, design: .rounded))
                     .foregroundColor(palette.textPrimary)
                 
@@ -23,7 +23,7 @@ struct AnalyzeView: View {
                 Button {
                     showExercisePicker = true
                 } label: {
-                    analyzeCard(
+                    analyseCard(
                         title: "Live Coaching",
                         subtitle: "Real-time guidance & reps",
                         icon: "camera.viewfinder",
@@ -35,7 +35,7 @@ struct AnalyzeView: View {
                 Button {
                     showOffline = true
                 } label: {
-                    analyzeCard(
+                    analyseCard(
                         title: "Offline Analysis",
                         subtitle: "Upload video & get summary",
                         icon: "film",
@@ -101,7 +101,7 @@ struct AnalyzeView: View {
         .presentationDetents([.medium])
     }
     
-    private func analyzeCard(title: String, subtitle: String, icon: String, palette: ThemePalette) -> some View {
+    private func analyseCard(title: String, subtitle: String, icon: String, palette: ThemePalette) -> some View {
         HStack(spacing: 14) {
             Image(systemName: icon)
                 .font(.system(size: 22, weight: .bold))
