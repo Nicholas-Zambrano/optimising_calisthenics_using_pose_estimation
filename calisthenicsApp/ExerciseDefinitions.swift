@@ -36,6 +36,7 @@ struct PushUpConfig: Codable {
 
 struct SquatConfig: Codable {
     let depthThreshold: Double
+    let depthThresholdFront: Double?
     let lockoutAngle: Double
     let kneeValgusThreshold: Double
     let tempoMinSec: Double
@@ -123,8 +124,9 @@ final class ExerciseDefinitionStore {
         
         self.squat = Self.load("squat", as: SquatConfig.self) ?? SquatConfig(
             depthThreshold: 95,
+            depthThresholdFront: nil,
             lockoutAngle: 170,
-            kneeValgusThreshold: 15,
+            kneeValgusThreshold: 15, 
             tempoMinSec: 0.6,
             feedbackRules: []
         )

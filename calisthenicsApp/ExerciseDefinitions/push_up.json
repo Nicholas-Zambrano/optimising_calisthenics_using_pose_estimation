@@ -178,7 +178,7 @@
       "bottom": { "condition": "angle <= 90" }
     },
     "counter": { "from": "descent", "to": "bottom" },
-    "minRepDurationSec": 0.6
+    "minRepDurationSec": 0.3
   },
   "fsmSide": {
     "stateOrder": ["start", "descent", "bottom"],
@@ -188,6 +188,6 @@
       "bottom": { "condition": "angle <= 100" }
     },
     "counter": { "from": "descent", "to": "bottom" },
-    "minRepDurationSec": 0.6
+    "minRepDurationSec": 0.3
   }
 }

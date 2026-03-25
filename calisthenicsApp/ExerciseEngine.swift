@@ -102,6 +102,7 @@ final class ExerciseEngine {
     private var squatKneeTravelWindow: [Double] = []
     private let squatSmoothingWindow = 3
     private var lastSquatLogMS: Int = 0
+    private var lastPushUpLogMS: Int = 0
     private var squatCalibratedLeanBaseline: Double?
     private var squatCalibratedKneeFwdBaseline: Double?
     private var squatCalibLeanSum: Double = 0
@@ -280,6 +281,21 @@ final class ExerciseEngine {
             depthProgress = depthProgressFor(currentAngle: smoothedMetrics.elbowFlexion, minAngle: minElbow, maxAngle: maxElbow)
         }
         
+        if (timestampMS - lastPushUpLogMS) >= 500 {
+            lastPushUpLogMS = timestampMS
+            print(String(
+                format: "[PushUp:frame] mode=%@ state=%@ elbow=%.1f back=%.1f depth=%.2f flare=%.3f hipDrop=%.3f inRep=%d",
+                "\(postureMode)",
+                fsmCurrentState ?? "nil",
+                smoothedMetrics.elbowFlexion,
+                smoothedMetrics.backAngle,
+                depthProgress,
+                smoothedFront.elbowFlareRatio,
+                smoothedFront.hipDropRatio,
+                inRep ? 1 : 0
+            ))
+        }
+
         if enableDebug {
             let hipBase = calibrationHipDrop ?? pushUpConfig.hipBaseDefault
             let flareBase = calibrationElbowFlareRatio ?? pushUpConfig.flareBaseDefault
@@ -395,11 +411,12 @@ final class ExerciseEngine {
 
         let rawAngle = evaluator.calculateAngle(p1: sideHip, p2: sideKnee, p3: sideAnkle)
         let angle = smoothValue(&squatAngleWindow, rawAngle, maxCount: squatSmoothingWindow)
-        let minAngleForDepth = squatCalibratedMinAngle ?? squatConfig.depthThreshold
+        let effectiveDepthThreshold = sideView ? squatConfig.depthThreshold : (squatConfig.depthThresholdFront ?? 120.0)
+        let minAngleForDepth = squatCalibratedMinAngle ?? effectiveDepthThreshold
         depthProgress = depthProgressFor(currentAngle: angle, minAngle: minAngleForDepth, maxAngle: squatConfig.lockoutAngle)
         squatRepMinAngle = min(squatRepMinAngle, angle)
 
-        let depthReached = angle <= squatConfig.depthThreshold
+        let depthReached = angle <= effectiveDepthThreshold
         let lockoutAngle = squatConfig.lockoutAngle
 
         let torsoLength = max(0.001, sqrt(pow(Double(sideShoulder.x - sideHip.x), 2) + pow(Double(sideShoulder.y - sideHip.y), 2)))
@@ -484,8 +501,9 @@ final class ExerciseEngine {
                     minAngle: minAngleForDepth,
                     maxAngle: squatConfig.lockoutAngle
                 )
-                let fullDepthTarget = 80.0
-                let depthQuality = min(1.0, max(0.0, (squatConfig.depthThreshold - squatRepMinAngle) / max(1.0, squatConfig.depthThreshold - fullDepthTarget)))
+                let repDepthThreshold = squatRepStartedSideView ? squatConfig.depthThreshold : (squatConfig.depthThresholdFront ?? 120.0)
+                let fullDepthTarget = squatRepStartedSideView ? 80.0 : 105.0
+                let depthQuality = min(1.0, max(0.0, (repDepthThreshold - squatRepMinAngle) / max(1.0, repDepthThreshold - fullDepthTarget)))
                 let squatPostureMode: PushUpPostureMode = squatRepStartedSideView ? .side : .front
                 let pelvicTilt = squatRepMinAngle < 80.0
                     ? max(0.0, squatRepDownPhasePeakLean - squatRepLeanAtMinAngle)
@@ -816,7 +834,6 @@ final class ExerciseEngine {
     private func resetRepMetrics() {
         repMinElbowAngle = 999
         repMaxElbowAngle = 0
-        repMinBackAngle = 999
         repMaxElbowFlare = 0
         repMaxHipDropRatio = 0
         repMaxHipRiseRatio = 0
@@ -1099,7 +1116,9 @@ final class ExerciseEngine {
         }
 
         if fsmCurrentState == fsm.counter.from && fsmPrevState != fsm.counter.from {
+            let savedLockout = repMaxElbowAngle
             resetRepMetrics()
+            repMaxElbowAngle = savedLockout
             repStartMS = timestampMS
             fsmRepStartMS = timestampMS
             inRep = true
@@ -1155,7 +1174,7 @@ final class ExerciseEngine {
         let depthThreshold = (postureMode == .front) ? pushUpConfig.depthFrontThreshold : pushUpConfig.depthSideThreshold
         let lockoutAngle = (postureMode == .front) ? pushUpConfig.lockoutFrontThreshold : pushUpConfig.lockoutSideThreshold
         let repDepthProgress = depthProgressFor(currentAngle: repMinElbowAngle, minAngle: depthThreshold, maxAngle: lockoutAngle)
-        lastRepTooFast = durationSec < 0.6
+        lastRepTooFast = durationSec < 0.3
 
         let useHipMetrics = repHipsVisible && feedbackFocus == .fullBody && !isPortraitMode
         let repValues: [String: Double] = [
@@ -1177,9 +1196,10 @@ final class ExerciseEngine {
         let matchedRules = evaluateRules(values: repValues, postureMode: ruleMode, exerciseTag: "pushup", rules: pushUpConfig.feedbackRules)
         let repScore = scoreForRules(matchedRules)
         lastRepAllMessages = dedupeRules(matchedRules.sorted { severityRank($0.severity) > severityRank($1.severity) }).map { ($0.message, $0.severity) }
+        let ids = matchedRules.map { $0.id }.joined(separator: ",")
+        print(String(format: "[PushUpRep] mode=%@ focus=%@ backAngle=%.1f elbow=%.1f matched=[%@] score=%d",
+                     "\(ruleMode)", "\(feedbackFocus)", repMinBackAngle, repMinElbowAngle, ids, repScore))
         if debugEnabled {
-            let ids = matchedRules.map { $0.id }.joined(separator: ",")
-            print("[PushUpRep] values=\(repValues) matched=[\(ids)] score=\(repScore)")
             if matchedRules.isEmpty {
                 print("[PushUpRep] rules.count=\(pushUpConfig.feedbackRules.count) mode=\(ruleMode) focus=\(feedbackFocus)")
                 for rule in pushUpConfig.feedbackRules {
@@ -1210,6 +1230,8 @@ final class ExerciseEngine {
 
         let audioMessage = messageForAudio(matchedRules)
         repCompletedMessage = "Rep \(repCount). \(audioMessage)"
+
+        repMinBackAngle = 999
 
         if repCount >= targetReps {
             isSessionComplete = true

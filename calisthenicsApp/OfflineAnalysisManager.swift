@@ -49,6 +49,7 @@ final class OfflineAnalysisManager: ObservableObject {
     private var isCancelled = false
     private var bestScore: Int = -1
     private var worstScore: Int = 101
+    private var worstRisk: RiskLevel = .low
     private var loggedFirstSnapshot = false
     
     func cancel() {
@@ -63,6 +64,7 @@ final class OfflineAnalysisManager: ObservableObject {
         worstSnapshot = nil
         bestScore = -1
         worstScore = 101
+        worstRisk = .low
         loggedFirstSnapshot = false
         repSummaries = []
         status = "Preparing video..."
@@ -246,8 +248,12 @@ final class OfflineAnalysisManager: ObservableObject {
                                             self.bestScore = repScore
                                             self.bestSnapshot = frame
                                         }
-                                        if repScore <= self.worstScore {
+                                        let riskRank = { (r: RiskLevel) -> Int in r == .critical ? 2 : (r == .medium ? 1 : 0) }
+                                        let newRank = riskRank(processed.risk)
+                                        let curRank = riskRank(self.worstRisk)
+                                        if repScore < self.worstScore || (repScore == self.worstScore && newRank > curRank) {
                                             self.worstScore = repScore
+                                            self.worstRisk = processed.risk
                                             self.worstSnapshot = frame
                                         }
                                     }
@@ -287,9 +293,22 @@ final class OfflineAnalysisManager: ObservableObject {
                     let scores = self.repSummaries.map { $0.score }
                     let total = self.repSummaries.count
                     let avg = scores.reduce(0, +) / max(1, total)
-                    let clean = scores.filter { $0 >= 85 }.count
-                    let msgs = self.repSummaries.map { $0.primaryMessage }.filter { !$0.isEmpty }
-                    let common = Dictionary(grouping: msgs, by: { $0 }).max(by: { $0.value.count < $1.value.count })?.key
+                    let clean = self.repSummaries.filter { $0.allMessages.isEmpty }.count
+                    let problemReps = self.repSummaries.filter { !$0.allMessages.isEmpty }
+                    let severityRank: (RiskLevel) -> Int = { r in r == .critical ? 2 : (r == .medium ? 1 : 0) }
+                    let common: String? = {
+                        guard !problemReps.isEmpty else { return nil }
+                        let msgs = problemReps.map { $0.primaryMessage }.filter { !$0.isEmpty }
+                        guard !msgs.isEmpty else { return nil }
+                        let grouped = Dictionary(grouping: msgs, by: { $0 })
+                        let topMsg = grouped.max(by: { a, b in
+                            if a.value.count != b.value.count { return a.value.count < b.value.count }
+                            let rankA = problemReps.first(where: { $0.primaryMessage == a.key }).map { severityRank($0.risk) } ?? 0
+                            let rankB = problemReps.first(where: { $0.primaryMessage == b.key }).map { severityRank($0.risk) } ?? 0
+                            return rankA < rankB
+                        })?.key
+                        return topMsg
+                    }()
                     self.sessionSummary = SessionSummary(
                         totalReps: total,
                         averageScore: avg,

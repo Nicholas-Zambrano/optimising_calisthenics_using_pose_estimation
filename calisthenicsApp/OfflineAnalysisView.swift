@@ -173,8 +173,15 @@ struct OfflineAnalysisView: View {
                     }
 
                     if !manager.repSummaries.isEmpty {
-                            let bestID = manager.repSummaries.max(by: { $0.score < $1.score })?.id
-                            let worstID = manager.repSummaries.count > 1 ? manager.repSummaries.min(by: { $0.score < $1.score })?.id : nil
+                            let riskRank: (RiskLevel) -> Int = { r in r == .critical ? 2 : (r == .medium ? 1 : 0) }
+                            let bestID = manager.repSummaries.max(by: {
+                                if $0.score != $1.score { return $0.score < $1.score }
+                                return riskRank($0.risk) > riskRank($1.risk)
+                            })?.id
+                            let worstID = manager.repSummaries.count > 1 ? manager.repSummaries.min(by: {
+                                if $0.score != $1.score { return $0.score > $1.score }
+                                return riskRank($0.risk) < riskRank($1.risk)
+                            })?.id : nil
                             VStack(alignment: .leading, spacing: 10) {
                                 Text("Rep Timeline — tap to review")
                                     .font(.headline)
