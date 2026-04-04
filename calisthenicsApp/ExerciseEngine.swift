@@ -1552,7 +1552,7 @@ final class ExerciseEngine {
                 colors.torso = .red
                 colors.hasCritical = true
             } else if metrics.backAngle < 165 {
-                colors.torso = .yellow
+                colors.torso = .orange
             } else {
                 colors.torso = .green
             }
@@ -1562,8 +1562,8 @@ final class ExerciseEngine {
                 colors.rightArm = .red
                 colors.hasCritical = true
             } else if metrics.elbowFlare > 60 {
-                colors.leftArm = .yellow
-                colors.rightArm = .yellow
+                colors.leftArm = .orange
+                colors.rightArm = .orange
             } else {
                 colors.leftArm = .green
                 colors.rightArm = .green
@@ -1581,8 +1581,8 @@ final class ExerciseEngine {
                 colors.rightArm = .red
                 colors.hasCritical = true
             } else if frontMetrics.elbowFlareRatio > flareYellow {
-                colors.leftArm = .yellow
-                colors.rightArm = .yellow
+                colors.leftArm = .orange
+                colors.rightArm = .orange
             } else {
                 colors.leftArm = .green
                 colors.rightArm = .green
@@ -1593,7 +1593,7 @@ final class ExerciseEngine {
                     colors.torso = .red
                     colors.hasCritical = true
                 } else if frontMetrics.hipDropRatio > hipYellow {
-                    colors.torso = .yellow
+                    colors.torso = .orange
                 } else {
                     colors.torso = .green
                 }

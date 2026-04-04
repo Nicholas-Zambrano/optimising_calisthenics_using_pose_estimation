@@ -117,7 +117,7 @@ final class OfflineAnalysisManager: ObservableObject {
             if reader.canAdd(output) { reader.add(output) }
             
             let poseOptions = PoseLandmarkerOptions()
-            if let modelPath = Bundle.main.path(forResource: "pose_landmarker_lite", ofType: "task") {
+            if let modelPath = Bundle.main.path(forResource: "pose_landmarker_full", ofType: "task") {
                 poseOptions.baseOptions.modelAssetPath = modelPath
             }
             poseOptions.runningMode = .video
@@ -433,7 +433,7 @@ final class OfflineAnalysisManager: ObservableObject {
             if writer.canAdd(writerInput) { writer.add(writerInput) }
             
             let poseOptions = PoseLandmarkerOptions()
-            if let modelPath = Bundle.main.path(forResource: "pose_landmarker_lite", ofType: "task") {
+            if let modelPath = Bundle.main.path(forResource: "pose_landmarker_full", ofType: "task") {
                 poseOptions.baseOptions.modelAssetPath = modelPath
             }
             poseOptions.runningMode = .video

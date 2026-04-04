@@ -55,7 +55,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
         squatConfig: squatConfig,
         pullUpConfig: pullUpConfig
     )
-    private let synthesizer = AVSpeechSynthesizer()
+    private let synthesiser = AVSpeechSynthesizer()
     private var lastSpokenMessage = ""
 
     private var lastPoseMode: PushUpPostureMode = .none
@@ -132,8 +132,8 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
                 self?.session.stopRunning()
             }
         }
-        if synthesizer.isSpeaking {
-            synthesizer.stopSpeaking(at: .immediate)
+        if synthesiser.isSpeaking {
+            synthesiser.stopSpeaking(at: .immediate)
         }
         lastSpokenMessage = ""
     }
@@ -593,14 +593,14 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
 
     func speakFeedback(_ message: String, force: Bool = false) {
         if !force {
-            guard message != lastSpokenMessage, !synthesizer.isSpeaking else { return }
-        } else if synthesizer.isSpeaking {
+            guard message != lastSpokenMessage, !synthesiser.isSpeaking else { return }
+        } else if synthesiser.isSpeaking {
             return
         }
         let utterance = AVSpeechUtterance(string: message)
         utterance.voice = AVSpeechSynthesisVoice(language: "en-GB")
         utterance.rate = 0.45
-        synthesizer.speak(utterance)
+        synthesiser.speak(utterance)
         lastSpokenMessage = message
     }
 
