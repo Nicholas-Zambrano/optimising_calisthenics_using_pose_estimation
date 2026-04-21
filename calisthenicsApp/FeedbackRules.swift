@@ -23,8 +23,8 @@ enum FeedbackSensitivity: String, CaseIterable {
 }
 
 enum FeedbackFocus: String, CaseIterable {
-    case armsOnly = "Arms Only"
-    case fullBody = "Full Body"
+    case armsOnly = "Front View"
+    case fullBody = "Side View"
 }
 
 struct SessionSummary {

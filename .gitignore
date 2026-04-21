@@ -4,3 +4,6 @@ calisthenicsApp.xcworkspace/xcuserdata/
 *.task
 .DS_Store
 DerivedData/
+
+# User study data - private, never push
+StudyData/

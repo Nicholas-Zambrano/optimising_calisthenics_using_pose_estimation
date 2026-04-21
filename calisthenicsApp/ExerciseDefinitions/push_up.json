@@ -41,16 +41,7 @@
       "metric": "hipsVisible",
       "op": "lt",
       "threshold": 0.5,
-      "appliesIn": ["front", "fullBody"]
-    },
-    {
-      "id": "hip_sag_critical",
-      "severity": "critical",
-      "message": "Lift hips, keep body straight",
-      "metric": "hipDropRatio",
-      "op": "gt",
-      "threshold": 0.30,
-      "appliesIn": ["front", "fullBody", "landscape"]
+      "appliesIn": ["side"]
     },
     {
       "id": "hips_too_high",
@@ -59,16 +50,7 @@
       "metric": "hipRiseRatio",
       "op": "gt",
       "threshold": 0.12,
-      "appliesIn": ["front", "fullBody", "landscape"]
-    },
-    {
-      "id": "hip_sag",
-      "severity": "important",
-      "message": "Lift hips, keep body straight",
-      "metric": "hipDropRatio",
-      "op": "gt",
-      "threshold": 0.22,
-      "appliesIn": ["front", "fullBody", "landscape"]
+      "appliesIn": ["side"]
     },
     {
       "id": "elbow_flare_critical",
@@ -122,7 +104,7 @@
       "metric": "shoulderAsym",
       "op": "gt",
       "threshold": 0.12,
-      "appliesIn": ["fullBody", "landscape"]
+      "appliesIn": ["front", "landscape"]
     },
     {
       "id": "shoulder_asym",
@@ -131,7 +113,7 @@
       "metric": "shoulderAsym",
       "op": "gt",
       "threshold": 0.08,
-      "appliesIn": ["fullBody", "landscape"]
+      "appliesIn": ["front", "landscape"]
     },
     {
       "id": "elbow_diff",
@@ -149,7 +131,7 @@
       "metric": "depthProgress",
       "op": "lt",
       "threshold": 0.6,
-      "appliesIn": ["front", "side", "fullBody"]
+      "appliesIn": ["front", "side"]
     },
     {
       "id": "shallow_depth_side",
@@ -158,7 +140,7 @@
       "metric": "depthProgress",
       "op": "lt",
       "threshold": 0.7,
-      "appliesIn": ["side", "fullBody"]
+      "appliesIn": ["side"]
     },
     {
       "id": "tempo_fast",
@@ -167,7 +149,7 @@
       "metric": "tempoFast",
       "op": "gt",
       "threshold": 0.5,
-      "appliesIn": ["front", "side", "fullBody"]
+      "appliesIn": ["front", "side"]
     }
   ],
   "fsmFront": {
@@ -175,7 +157,7 @@
     "states": {
       "start": { "condition": "angle > 150" },
       "descent": { "condition": "angle > 90 && angle <= 150" },
-      "bottom": { "condition": "angle <= 90" }
+      "bottom": { "condition": "angle <= 110" }
     },
     "counter": { "from": "descent", "to": "bottom" },
     "minRepDurationSec": 0.3
@@ -185,7 +167,7 @@
     "states": {
       "start": { "condition": "angle > 155" },
       "descent": { "condition": "angle > 100 && angle <= 155" },
-      "bottom": { "condition": "angle <= 100" }
+      "bottom": { "condition": "angle <= 115" }
     },
     "counter": { "from": "descent", "to": "bottom" },
     "minRepDurationSec": 0.3

@@ -6,31 +6,13 @@
   "tempoMinSec": 0.6,
   "feedbackRules": [
     {
-      "id": "knees_caving_critical",
-      "severity": "critical",
-      "message": "Knees caving in — push them out",
-      "metric": "kneeValgus",
-      "op": "gt",
-      "threshold": 0.22,
-      "appliesIn": ["squat", "front"]
-    },
-    {
       "id": "knees_caving",
-      "severity": "important",
+      "severity": "critical",
       "message": "Keep knees tracking over toes",
       "metric": "kneeValgus",
       "op": "gt",
       "threshold": 0.15,
       "appliesIn": ["squat", "front"]
-    },
-    {
-      "id": "knees_forward_critical",
-      "severity": "critical",
-      "message": "Knees too far forward — drive through heels",
-      "metric": "kneeForwardTravel",
-      "op": "gt",
-      "threshold": 1.30,
-      "appliesIn": ["squat", "side"]
     },
     {
       "id": "knees_forward",
@@ -42,17 +24,8 @@
       "appliesIn": ["squat", "side"]
     },
     {
-      "id": "leaning_forward_critical",
-      "severity": "critical",
-      "message": "Chest up — you are leaning too far forward",
-      "metric": "forwardLean",
-      "op": "gt",
-      "threshold": 0.78,
-      "appliesIn": ["squat", "side"]
-    },
-    {
       "id": "leaning_forward",
-      "severity": "important",
+      "severity": "critical",
       "message": "Keep chest up",
       "metric": "forwardLean",
       "op": "gt",
@@ -78,24 +51,6 @@
       "appliesIn": ["squat"]
     },
     {
-      "id": "squat_depth",
-      "severity": "minor",
-      "message": "Try to reach full depth",
-      "metric": "depthQuality",
-      "op": "lt",
-      "threshold": 0.75,
-      "appliesIn": ["squat"]
-    },
-    {
-      "id": "squat_tempo",
-      "severity": "minor",
-      "message": "Slow down the tempo",
-      "metric": "tempoFast",
-      "op": "gt",
-      "threshold": 0.5,
-      "appliesIn": ["squat"]
-    },
-    {
       "id": "squat_visible",
       "severity": "important",
       "message": "Get full body in view",
@@ -103,6 +58,24 @@
       "op": "lt",
       "threshold": 0.5,
       "appliesIn": ["squat", "front"]
+    },
+    {
+      "id": "squat_tempo",
+      "severity": "minor",
+      "message": "Slow down — control the movement",
+      "metric": "tempoFast",
+      "op": "gt",
+      "threshold": 0.5,
+      "appliesIn": ["squat"]
+    },
+    {
+      "id": "squat_depth",
+      "severity": "minor",
+      "message": "Try to squat a little deeper",
+      "metric": "depthQuality",
+      "op": "lt",
+      "threshold": 0.75,
+      "appliesIn": ["squat"]
     }
   ]
 }

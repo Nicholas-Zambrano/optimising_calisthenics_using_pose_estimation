@@ -293,6 +293,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
                     (allMsgs.contains(where: { $0.severity == .important }) ? "important" : "clean")
                 StudyLogger.shared.logRep(StudyRepRow(
                     participantID: studyParticipantID,
+                    exercise: "Push-Up",
                     condition: studyCondition,
                     conditionOrder: studyConditionOrder,
                     repNumber: output.repCount,
@@ -302,9 +303,9 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
                     importantErrors: allMsgs.filter { $0.severity == .important }.count,
                     backAngleCritical: ruleIDs.contains("back_angle_critical") ? 1 : 0,
                     elbowFlareCritical: ruleIDs.contains("elbow_flare_side") || ruleIDs.contains("elbow_flare_critical") ? 1 : 0,
-                    hipSagCritical: ruleIDs.contains("hip_sag") ? 1 : 0,
+                    shoulderAsymCritical: ruleIDs.contains("shoulder_asym_critical") ? 1 : 0,
                     shallowDepth: ruleIDs.contains("shallow_depth") ? 1 : 0,
-                    tempoFast: ruleIDs.contains("tempo_too_fast") ? 1 : 0,
+                    tempoFast: ruleIDs.contains("tempo_fast") ? 1 : 0,
                     depthProgress: engine.lastRepDepthProgress,
                     repDurationSec: engine.lastRepDurationSec,
                     timestampMS: timestampMS
@@ -351,6 +352,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
                     (allMsgs.contains(where: { $0.severity == .important }) ? "important" : "clean")
                 StudyLogger.shared.logRep(StudyRepRow(
                     participantID: studyParticipantID,
+                    exercise: "Squat",
                     condition: studyCondition,
                     conditionOrder: studyConditionOrder,
                     repNumber: output.repCount,
@@ -358,11 +360,11 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
                     riskLevel: riskStr,
                     criticalErrors: allMsgs.filter { $0.severity == .critical }.count,
                     importantErrors: allMsgs.filter { $0.severity == .important }.count,
-                    backAngleCritical: ruleIDs.contains("leaning_forward_critical") ? 1 : 0,
+                    backAngleCritical: ruleIDs.contains("leaning_forward") ? 1 : 0,
                     elbowFlareCritical: ruleIDs.contains("knees_caving") ? 1 : 0,
-                    hipSagCritical: ruleIDs.contains("pelvic_tilt") ? 1 : 0,
-                    shallowDepth: ruleIDs.contains("shallow_depth") ? 1 : 0,
-                    tempoFast: ruleIDs.contains("tempo_too_fast") ? 1 : 0,
+                    shoulderAsymCritical: ruleIDs.contains("pelvic_tilt") ? 1 : 0,
+                    shallowDepth: ruleIDs.contains("not_deep_enough") ? 1 : 0,
+                    tempoFast: ruleIDs.contains("squat_tempo") ? 1 : 0,
                     depthProgress: engine.lastRepDepthProgress,
                     repDurationSec: engine.lastRepDurationSec,
                     timestampMS: timestampMS
@@ -400,6 +402,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
                     (allMsgs.contains(where: { $0.severity == .important }) ? "important" : "clean")
                 StudyLogger.shared.logRep(StudyRepRow(
                     participantID: studyParticipantID,
+                    exercise: "Pull-Up",
                     condition: studyCondition,
                     conditionOrder: studyConditionOrder,
                     repNumber: output.repCount,
@@ -409,9 +412,9 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
                     importantErrors: allMsgs.filter { $0.severity == .important }.count,
                     backAngleCritical: ruleIDs.contains("back_angle_critical") ? 1 : 0,
                     elbowFlareCritical: ruleIDs.contains("elbow_flare_critical") ? 1 : 0,
-                    hipSagCritical: ruleIDs.contains("hip_sag") ? 1 : 0,
+                    shoulderAsymCritical: ruleIDs.contains("hip_sag") ? 1 : 0,
                     shallowDepth: ruleIDs.contains("shallow_depth") ? 1 : 0,
-                    tempoFast: ruleIDs.contains("tempo_too_fast") ? 1 : 0,
+                    tempoFast: ruleIDs.contains("pullup_tempo") ? 1 : 0,
                     depthProgress: engine.lastRepDepthProgress,
                     repDurationSec: engine.lastRepDurationSec,
                     timestampMS: timestampMS

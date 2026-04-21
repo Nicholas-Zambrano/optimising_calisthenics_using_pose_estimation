@@ -60,6 +60,7 @@ final class ExerciseEngine {
     private var pendingFeedbackMessage: String = ""
     private var pendingFeedbackStartMS: Int64 = 0
     private var liveFeedbackLocked: Bool = false
+    private var lastRepMatchedRulesSquat: [FeedbackRule] = []
     private var repArmsVisible: Bool = true
     private var debugEnabled: Bool = false
     private var lastMetricsTimestampMS: Int?
@@ -274,7 +275,7 @@ final class ExerciseEngine {
         updateRepMetrics(metrics: smoothedMetrics, frontMetrics: smoothedFront, elbowAngleDiff: smoothedElbowDiff)
         handlePushUpRep(elbowAngleRaw: metrics.elbowFlexion, timestampMS: timestampMS, postureMode: postureMode)
         
-        overlayColors = colorsFor(metrics: smoothedMetrics, frontMetrics: smoothedFront, postureMode: postureMode)
+        overlayColors = colorsFor(metrics: smoothedMetrics, frontMetrics: smoothedFront, elbowAngleDiff: smoothedElbowDiff, postureMode: postureMode)
         
         if let minElbow = calibrationMinElbow, let maxElbow = calibrationMaxElbow {
             depthProgress = depthProgressFor(currentAngle: smoothedMetrics.elbowFlexion, minAngle: minElbow, maxAngle: maxElbow)
@@ -483,6 +484,7 @@ final class ExerciseEngine {
         if squatState == "UP" {
             if squatRepStartMS == nil {
                 squatRepStartMS = timestampMS
+                lastRepMatchedRulesSquat = []
                 switch viewMode {
                 case .side:  squatRepStartedSideView = true
                 case .front: squatRepStartedSideView = false
@@ -523,9 +525,13 @@ final class ExerciseEngine {
                 ]
 
                 matchedForScore = evaluateRules(values: repValues, postureMode: squatPostureMode, exerciseTag: "squat", rules: squatConfig.feedbackRules)
+                lastRepMatchedRulesSquat = matchedForScore
                 let repScore = scoreForRules(matchedForScore)
                 lastRepScore = repScore
                 lastRepAllMessages = dedupeRules(matchedForScore.sorted { severityRank($0.severity) > severityRank($1.severity) }).map { ($0.message, $0.severity) }
+                lastRepDurationSec = durationSec
+                lastRepDepthProgress = repDepthProgress
+                lastRepRuleIDs = Set(matchedForScore.map { $0.id })
                 repScores.append(repScore)
                 overallScore = repScores.isEmpty ? 0 : Int(Double(repScores.reduce(0, +)) / Double(repScores.count))
 
@@ -631,7 +637,19 @@ final class ExerciseEngine {
             )
         }
 
-        overlayColors = colorsForSquat(rules: matchedForScore)
+        let liveSquatValues: [String: Double] = [
+            "kneeValgus": kneeValgus,
+            "forwardLean": forwardLean,
+            "kneeForwardTravel": kneeForwardTravel
+        ]
+        let liveSquatMode: PushUpPostureMode = sideView ? .side : .front
+        let liveSquatRules = evaluateRules(values: liveSquatValues, postureMode: liveSquatMode, exerciseTag: "squat", rules: squatConfig.feedbackRules)
+        overlayColors = colorsForSquat(rules: !liveSquatRules.isEmpty ? liveSquatRules : lastRepMatchedRulesSquat)
+        if let topLiveRule = liveSquatRules.sorted(by: { severityRank($0.severity) > severityRank($1.severity) }).first,
+           topLiveRule.severity == .critical || topLiveRule.severity == .important {
+            let label = topLiveRule.severity == .critical ? "CRITICAL" : "IMPORTANT"
+            updateFeedback(message: "\(label): \(topLiveRule.message)", secondary: "", risk: topLiveRule.severity == .critical ? .critical : .medium, force: true)
+        }
         return EngineOutput(
             repCount: repCount,
             cleanReps: cleanReps,
@@ -781,6 +799,9 @@ final class ExerciseEngine {
                 let repScore = scoreForRules(matchedForScore)
                 lastRepScore = repScore
                 lastRepAllMessages = dedupeRules(matchedForScore.sorted { severityRank($0.severity) > severityRank($1.severity) }).map { ($0.message, $0.severity) }
+                lastRepDurationSec = durationSec
+                lastRepDepthProgress = repDepthProgress
+                lastRepRuleIDs = Set(matchedForScore.map { $0.id })
                 repScores.append(repScore)
                 overallScore = repScores.isEmpty ? 0 : Int(Double(repScores.reduce(0, +)) / Double(repScores.count))
 
@@ -1055,7 +1076,7 @@ final class ExerciseEngine {
                     repCount += 1
                     inRep = false
                     liveFeedbackLocked = false
-                    finalizeRep(postureMode: postureMode, timestampMS: timestampMS)
+                    finaliseRep(postureMode: postureMode, timestampMS: timestampMS)
                     belowDepthStartMS = nil
                 }
             } else {
@@ -1133,7 +1154,7 @@ final class ExerciseEngine {
                 repCount += 1
                 inRep = false
                 fsmCounted = true
-                finalizeRep(postureMode: postureMode, timestampMS: timestampMS)
+                finaliseRep(postureMode: postureMode, timestampMS: timestampMS)
             }
         }
     }
@@ -1168,7 +1189,7 @@ final class ExerciseEngine {
         return false
     }
     
-    private func finalizeRep(postureMode: PushUpPostureMode, timestampMS: Int) {
+    private func finaliseRep(postureMode: PushUpPostureMode, timestampMS: Int) {
         repEndMS = timestampMS
         liveFeedbackLocked = false
         let durationMS = (repStartMS != nil && repEndMS != nil) ? max(1, (repEndMS! - repStartMS!)) : 1
@@ -1413,12 +1434,12 @@ final class ExerciseEngine {
         let message = messageForRules(matched)
         let secondary = secondaryMessageForRules(matched)
         if let primary = matched.sorted(by: { severityRank($0.severity) > severityRank($1.severity) }).first {
-            if inRep && primary.severity != .critical {
+            if inRep && primary.severity == .minor {
                 if liveFeedbackLocked { return }
             }
             if shouldUpdateLiveFeedback(message: message) {
                 updateFeedback(message: message, secondary: secondary, risk: riskLevel(for: primary.severity))
-                if inRep && primary.severity != .critical {
+                if inRep && primary.severity == .minor {
                     liveFeedbackLocked = true
                 }
             }
@@ -1429,15 +1450,27 @@ final class ExerciseEngine {
                                postureMode: PushUpPostureMode,
                                exerciseTag: String,
                                rules: [FeedbackRule]) -> [FeedbackRule] {
+        // First, check if any critical/important rules are triggered
+        let hasCriticalOrImportant = rules.contains { rule in
+            guard let value = values[rule.metric] else { return false }
+            let threshold = adjustedThreshold(for: rule)
+            let triggered = (rule.op == "gt" && value > threshold) || 
+                         (rule.op == "lt" && value < threshold)
+            return triggered && (rule.severity == .critical || rule.severity == .important)
+        }
+        
+        // Then evaluate all rules, but skip minor ones if critical/important are present
         return rules.filter { rule in
             if !applies(rule: rule, postureMode: postureMode, exerciseTag: exerciseTag) { return false }
             guard let value = values[rule.metric] else { return false }
             let threshold = adjustedThreshold(for: rule)
-            switch rule.op {
-            case "gt": return value > threshold
-            case "lt": return value < threshold
-            default: return false
-            }
+            
+            // Skip minor rules if critical/important are active
+            if rule.severity == .minor && hasCriticalOrImportant { return false }
+            
+            let triggered = (rule.op == "gt" && value > threshold) || 
+                         (rule.op == "lt" && value < threshold)
+            return triggered
         }
     }
 
@@ -1544,7 +1577,7 @@ final class ExerciseEngine {
     }
     
     
-    private func colorsFor(metrics: PushUpMetrics, frontMetrics: FrontViewMetrics, postureMode: PushUpPostureMode) -> OverlayColors {
+    private func colorsFor(metrics: PushUpMetrics, frontMetrics: FrontViewMetrics, elbowAngleDiff: Double, postureMode: PushUpPostureMode) -> OverlayColors {
         var colors = OverlayColors.neutral
         
         if postureMode == .side {
@@ -1583,6 +1616,9 @@ final class ExerciseEngine {
             } else if frontMetrics.elbowFlareRatio > flareYellow {
                 colors.leftArm = .orange
                 colors.rightArm = .orange
+            } else if elbowAngleDiff > 30 {
+                colors.leftArm = .orange
+                colors.rightArm = .orange
             } else {
                 colors.leftArm = .green
                 colors.rightArm = .green
@@ -1593,6 +1629,8 @@ final class ExerciseEngine {
                     colors.torso = .red
                     colors.hasCritical = true
                 } else if frontMetrics.hipDropRatio > hipYellow {
+                    colors.torso = .orange
+                } else if frontMetrics.hipRiseRatio > 0.12 {
                     colors.torso = .orange
                 } else {
                     colors.torso = .green
