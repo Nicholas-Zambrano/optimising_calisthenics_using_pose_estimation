@@ -1,15 +1,22 @@
 import Foundation
 
+
+
+// this is for push up evaluation 
 struct PushUpConfig: Codable {
-    let depthFrontThreshold: Double
+
+    let depthFrontThreshold:  Double
     let depthSideThreshold: Double
     let lockoutFrontThreshold: Double
     let lockoutSideThreshold: Double
+
     let lockoutHoldMS: Int
+
     let minDownVelocityFront: Double
     let minUpVelocityFront: Double
     let minDownVelocitySide: Double
     let minUpVelocitySide: Double
+
     let dwellFrontMS: Int
     let dwellSideMS: Int
     
@@ -29,35 +36,48 @@ struct PushUpConfig: Codable {
     let depthPenaltyScale: Double
     let asymPenaltyScale: Double
 
-    let feedbackRules: [FeedbackRule]
+    let feedbackRules:  [FeedbackRule]
     let fsmFront: PushUpFSMConfig?
     let fsmSide: PushUpFSMConfig?
 }
 
+
+// configuraion for squat evaluetion 
 struct SquatConfig: Codable {
+
     let depthThreshold: Double
     let depthThresholdFront: Double?
     let lockoutAngle: Double
     let kneeValgusThreshold: Double
     let tempoMinSec: Double
-    let feedbackRules: [FeedbackRule]
-}
+    let feedbackRules: [FeedbackRule] }
+
+
+// this is the pull up evaluation 
 
 struct PullUpConfig: Codable {
+
     let chinOverBarAngle: Double
     let bottomAngle: Double
     let asymmetryAngleDiff: Double
     let tempoMinSec: Double
     let feedbackRules: [FeedbackRule]
+
 }
 
+//  the severity rules
 enum RuleSeverity: String, Codable {
+
     case critical
     case important
     case minor
 }
 
+
+
+//  this is user feedback , with specific metrics
 struct FeedbackRule: Codable {
+
     let id: String
     let severity: RuleSeverity
     let message: String
@@ -65,23 +85,34 @@ struct FeedbackRule: Codable {
     let op: String
     let threshold: Double
     let appliesIn: [String]?
+
 }
 
+//  configureing the finate state machine
 struct PushUpFSMConfig: Codable {
+
     let stateOrder: [String]
     let states: [String: PushUpFSMState]
     let counter: PushUpFSMCounter
     let minRepDurationSec: Double
 }
 
+//  this is the single sate 
 struct PushUpFSMState: Codable {
+
     let condition: String
 }
 
+// the transition between states
 struct PushUpFSMCounter: Codable {
+    
     let from: String
     let to: String
 }
+
+
+
+//  this containts the exercise definition and loads them 
 
 final class ExerciseDefinitionStore {
     static let shared = ExerciseDefinitionStore()
@@ -90,7 +121,9 @@ final class ExerciseDefinitionStore {
     let squat: SquatConfig
     let pullUp: PullUpConfig
     
+
     private init() {
+
         self.pushUp = Self.load("push_up", as: PushUpConfig.self) ?? PushUpConfig(
             depthFrontThreshold: 110,
             depthSideThreshold: 100,
@@ -122,13 +155,16 @@ final class ExerciseDefinitionStore {
             fsmSide: nil
         )
         
-        self.squat = Self.load("squat", as: SquatConfig.self) ?? SquatConfig(
+
+        self.squat = Self.load("squat", as: SquatConfig.self) ?? SquatConfig
+        (
             depthThreshold: 95,
             depthThresholdFront: nil,
             lockoutAngle: 170,
             kneeValgusThreshold: 15, 
             tempoMinSec: 0.6,
             feedbackRules: []
+
         )
         
         self.pullUp = Self.load("pull_up", as: PullUpConfig.self) ?? PullUpConfig(
@@ -140,17 +176,21 @@ final class ExerciseDefinitionStore {
         )
     }
     
+    // implemented a helper to load the jon files and decode then,
     private static func load<T: Decodable>(_ name: String, as type: T.Type) -> T? {
         let url = Bundle.main.url(forResource: name, withExtension: "json", subdirectory: "ExerciseDefinitions")
             ?? Bundle.main.url(forResource: name, withExtension: "json")
         guard let url = url else {
+           
             print("Missing \(name).json in app bundle (checked ExerciseDefinitions/ and root)")
             return nil
         }
         do {
+
             let data = try Data(contentsOf: url)
             return try JSONDecoder().decode(T.self, from: data)
         } catch {
+
             print("Failed to load \(name).json: \(error)")
             return nil
         }

@@ -5,7 +5,8 @@ import UIKit
 import Combine
 import SwiftUI
 
-final class OfflineAnalysisManager: ObservableObject {
+final class OfflineAnalysisManager: ObservableObject
+ {
     struct RepSummary: Identifiable {
         let id = UUID()
         let repIndex: Int
@@ -34,6 +35,9 @@ final class OfflineAnalysisManager: ObservableObject {
             }
         }
     }
+
+
+
     @Published var progress: Double = 0
     @Published var status: String = "Idle"
     @Published var isRunning: Bool = false
@@ -44,6 +48,7 @@ final class OfflineAnalysisManager: ObservableObject {
     @Published var logLines: [String] = []
     @Published var mirrorOverlay: Bool = false
     @Published var repSummaries: [RepSummary] = []
+
 
     private let ciContext = CIContext()
     
@@ -57,7 +62,9 @@ final class OfflineAnalysisManager: ObservableObject {
         isCancelled = true
     }
     
-    func analyseVideo(url: URL, exercise: String, settings: AppSettings) {
+    func analyseVideo(url: URL, exercise: String, settings: AppSettings) 
+    
+    {
         isCancelled = false
         progress = 0
         sessionSummary = nil
@@ -68,11 +75,15 @@ final class OfflineAnalysisManager: ObservableObject {
         worstRisk = .low
         loggedFirstSnapshot = false
         repSummaries = []
-        status = "Preparing video..."
+        status = "Preparing video"
         logLines = []
         isRunning = true
         
+
+
         DispatchQueue.global(qos: .userInitiated).async {
+
+
             let asset = AVAsset(url: url)
             guard let track = asset.tracks(withMediaType: .video).first else {
                 DispatchQueue.main.async {
@@ -80,6 +91,7 @@ final class OfflineAnalysisManager: ObservableObject {
                     self.isRunning = false
                 }
                 return
+
             }
             
             let durationSec = CMTimeGetSeconds(asset.duration)
@@ -102,10 +114,15 @@ final class OfflineAnalysisManager: ObservableObject {
             let outputSettings: [String: Any] = [
                 kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
             ]
+
+
+
             let composition = AVMutableVideoComposition()
             composition.renderSize = videoSize
             composition.frameDuration = CMTime(value: 1, timescale: 30)
             let instruction = AVMutableVideoCompositionInstruction()
+
+
             instruction.timeRange = CMTimeRange(start: .zero, duration: asset.duration)
             let layerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: track)
             layerInstruction.setTransform(track.preferredTransform, at: .zero)
@@ -117,10 +134,15 @@ final class OfflineAnalysisManager: ObservableObject {
             if reader.canAdd(output) { reader.add(output) }
             
             let poseOptions = PoseLandmarkerOptions()
+
+
             if let modelPath = Bundle.main.path(forResource: "pose_landmarker_full", ofType: "task") {
                 poseOptions.baseOptions.modelAssetPath = modelPath
             }
+
+
             poseOptions.runningMode = .video
+
             let poseLandmarker: PoseLandmarker
             do {
                 poseLandmarker = try PoseLandmarker(options: poseOptions)
@@ -133,6 +155,8 @@ final class OfflineAnalysisManager: ObservableObject {
             }
             
             let processor = PoseDetectionManager()
+
+
             processor.activeExercise = exercise
             processor.isPortraitMode = isPortrait
             processor.sensitivity = settings.sensitivity
@@ -172,6 +196,8 @@ final class OfflineAnalysisManager: ObservableObject {
             }
             
             let startWall = Date()
+
+
             while reader.status == .reading, !self.isCancelled {
                 guard let sampleBuffer = output.copyNextSampleBuffer() else { break }
                 autoreleasepool {
@@ -305,6 +331,9 @@ final class OfflineAnalysisManager: ObservableObject {
             }
             
             DispatchQueue.main.async {
+
+
+
                 if self.isCancelled {
                     self.status = "Cancelled"
                     self.logLines.append("Analysis cancelled")
@@ -375,6 +404,8 @@ final class OfflineAnalysisManager: ObservableObject {
                 return
             }
             
+
+
             let outputSettings: [String: Any] = [
                 kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
             ]
@@ -460,6 +491,8 @@ final class OfflineAnalysisManager: ObservableObject {
                 self.repSummaries = []
             }
             
+
+
             if !reader.startReading() {
                 DispatchQueue.main.async {
                     self.status = "Failed to start reader"
@@ -486,12 +519,18 @@ final class OfflineAnalysisManager: ObservableObject {
                     continue
                 }
                 guard let sampleBuffer = output.copyNextSampleBuffer() else { break }
+                
+                
                 autoreleasepool {
+                    
+                    
                     if Date().timeIntervalSince(startWall) > max(30.0, CMTimeGetSeconds(asset.duration) * 3.0) {
                         reader.cancelReading()
                         return
                     }
+                    
                     let ts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+                    
                     let tsMS = Int(CMTimeGetSeconds(ts) * 1000)
                     if tsMS - lastProcessedMS < frameIntervalMS { return }
                     lastProcessedMS = tsMS
@@ -501,10 +540,14 @@ final class OfflineAnalysisManager: ObservableObject {
                     guard let result = try? poseLandmarker.detect(videoFrame: image, timestampInMilliseconds: tsMS),
                           let landmarks = result.landmarks.first else { return }
 
+                    
+                    
                     let engaged = self.isEngagedForExercise(exercise: exercise, landmarks: landmarks)
                     let processed = engaged ? self.processOnMain(processor: processor, landmarks: landmarks, timestampMS: tsMS) : nil
                     guard let pool = adaptor.pixelBufferPool else { return }
                     let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
+                    
+                    
                     if let outBuffer = self.makePixelBuffer(from: ciImage, pool: pool) {
                         if let processed = processed {
                             self.drawOverlay(
@@ -530,8 +573,12 @@ final class OfflineAnalysisManager: ObservableObject {
                 }
             }
             
+
+
             writerInput.markAsFinished()
             writer.finishWriting {
+
+
                 DispatchQueue.main.async {
                     if reader.status == .failed {
                         self.status = "Export failed: reader error"
@@ -550,26 +597,38 @@ final class OfflineAnalysisManager: ObservableObject {
     }
 
     
-    private func renderAnnotatedFrame(pixelBuffer: CVPixelBuffer,
-                                      landmarks: [NormalizedLandmark],
-                                      overlayColors: OverlayColors) -> UIImage? {
-        let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
-        let extent = ciImage.extent.integral
+
+    private func renderAnnotatedFrame( pixelBuffer: CVPixelBuffer,
+                                       landmarks: [NormalizedLandmark],
+                                       overlayColors: OverlayColors) -> UIImage? 
+                                       
+                                       {
+        
+        
+        let ciImage =  CIImage(cvPixelBuffer: pixelBuffer)
+        let extent =  ciImage.extent.integral
+
         guard let cgImage = ciContext.createCGImage(ciImage, from: extent) else { return nil }
         
         let videoImage = UIImage(cgImage: cgImage)
+
         let imageSize = videoImage.size
         
+
         UIGraphicsBeginImageContextWithOptions(imageSize, true, 1.0)
         
         videoImage.draw(in: CGRect(origin: .zero, size: imageSize))
         
-        guard let ctx = UIGraphicsGetCurrentContext() else { return nil }
+        guard let ctx = UIGraphicsGetCurrentContext() else { 
+            return nil 
+            }
         ctx.setLineWidth(5.0)
         
         let points = landmarks.map { landmark -> CGPoint in
             let x = CGFloat(landmark.x) * imageSize.width
             let y = CGFloat(landmark.y) * imageSize.height
+            
+            
             if mirrorOverlay {
                 return CGPoint(x: imageSize.width - x, y: y)
             }
@@ -581,6 +640,8 @@ final class OfflineAnalysisManager: ObservableObject {
             (11, 12), (11, 23), (12, 24), (23, 24),
             (23, 25), (25, 27), (24, 26), (26, 28)
         ]
+
+
         for (a, b) in connections {
             guard a < points.count, b < points.count else { continue }
             ctx.setStrokeColor(colorFor(connection: (a, b), overlayColors: overlayColors).cgColor)
@@ -620,73 +681,8 @@ final class OfflineAnalysisManager: ObservableObject {
         return buffer
     }
     
-//    private func drawOverlay(on pixelBuffer: CVPixelBuffer,
-//                             landmarks: [NormalizedLandmark],
-//                             overlayColors: OverlayColors,
-//                             message: String,
-//                             score: Int,
-//                             risk: RiskLevel) {
-//        CVPixelBufferLockBaseAddress(pixelBuffer, [])
-//        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, []) }
-//
-//        let width = CVPixelBufferGetWidth(pixelBuffer)
-//        let height = CVPixelBufferGetHeight(pixelBuffer)
-//        guard let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) else { return }
-//
-//        let colorSpace = CGColorSpaceCreateDeviceRGB()
-//        let bitmapInfo = CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
-//        guard let ctx = CGContext(
-//            data: baseAddress,
-//            width: width,
-//            height: height,
-//            bitsPerComponent: 8,
-//            bytesPerRow: CVPixelBufferGetBytesPerRow(pixelBuffer),
-//            space: colorSpace,
-//            bitmapInfo: bitmapInfo
-//        ) else { return }
-//
-//        ctx.translateBy(x: 0, y: CGFloat(height))
-//        ctx.scaleBy(x: 1.0, y: -1.0)
-//        ctx.setLineWidth(3.0)
-//
-//        let imageSize = CGSize(width: width, height: height)
-//        let points = landmarks.map { landmark -> CGPoint in
-//            let x = CGFloat(landmark.x) * imageSize.width
-//            let y = CGFloat(landmark.y) * imageSize.height
-//            if mirrorOverlay {
-//                return CGPoint(x: imageSize.width - x, y: y)
-//            }
-//            return CGPoint(x: x, y: y)
-//        }
-//        let connections: [(Int, Int)] = [
-//            (11, 13), (13, 15),
-//            (12, 14), (14, 16),
-//            (11, 12), (11, 23), (12, 24),
-//            (23, 24),
-//            (23, 25), (25, 27),
-//            (24, 26), (26, 28)
-//        ]
-//        for (a, b) in connections {
-//            guard a < points.count, b < points.count else { continue }
-//            ctx.setStrokeColor(colorFor(connection: (a, b), overlayColors: overlayColors).cgColor)
-//            ctx.move(to: points[a])
-//            ctx.addLine(to: points[b])
-//            ctx.strokePath()
-//        }
-//
-//        ctx.scaleBy(x: 1.0, y: -1.0)
-//        ctx.translateBy(x: 0, y: -CGFloat(height))
-//        UIGraphicsPushContext(ctx)
-//        let color: UIColor = (risk == .critical) ? .systemRed : (risk == .medium ? .systemOrange : .systemGreen)
-//        let text = "Score \(score)%  •  \(message)"
-//        let attrs: [NSAttributedString.Key: Any] = [
-//            .font: UIFont.systemFont(ofSize: 20, weight: .bold),
-//            .foregroundColor: UIColor.white,
-//            .backgroundColor: color.withAlphaComponent(0.7)
-//        ]
-//        (text as NSString).draw(at: CGPoint(x: 20, y: 20), withAttributes: attrs)
-//        UIGraphicsPopContext()
-//    }
+
+
     
     private func drawOverlay(on pixelBuffer: CVPixelBuffer,
                              landmarks: [NormalizedLandmark],
@@ -713,10 +709,11 @@ final class OfflineAnalysisManager: ObservableObject {
             bitmapInfo: bitmapInfo
         ) else { return }
 
-        // 1. Flip to Top-Left for MediaPipe skeleton
         ctx.translateBy(x: 0, y: CGFloat(height))
         ctx.scaleBy(x: 1.0, y: -1.0)
-        ctx.setLineWidth(5.0) // Thicker for better video visibility
+        ctx.setLineWidth(5.0) 
+
+
 
         let imageSize = CGSize(width: width, height: height)
         let points = landmarks.map { landmark -> CGPoint in
@@ -737,7 +734,6 @@ final class OfflineAnalysisManager: ObservableObject {
             (24, 26), (26, 28)
         ]
         
-        // Draw the skeleton
         for (a, b) in connections {
             guard a < points.count, b < points.count else { continue }
             ctx.setStrokeColor(colorFor(connection: (a, b), overlayColors: overlayColors).cgColor)
@@ -746,7 +742,7 @@ final class OfflineAnalysisManager: ObservableObject {
             ctx.strokePath()
         }
 
-        // 2. Create a transparent UIImage containing our Text
+
         guard score >= 0 && !message.isEmpty else { return }
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 1.0)
         let color: UIColor = (risk == .critical) ? .systemRed : (risk == .medium ? .systemOrange : .systemGreen)
@@ -758,18 +754,17 @@ final class OfflineAnalysisManager: ObservableObject {
             .backgroundColor: color.withAlphaComponent(0.85)
         ]
         
-        // Draw text near the top-left of the screen
         (text as NSString).draw(at: CGPoint(x: 40, y: 80), withAttributes: attrs)
         let textOverlayImage = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
         
-        // 3. Revert the CGContext back to Bottom-Left
         ctx.scaleBy(x: 1.0, y: -1.0)
         ctx.translateBy(x: 0, y: -CGFloat(height))
-        
-        // 4. Stamp the text image onto the video
-        // (Drawing a top-left image into a bottom-left context naturally flips it upright!)
+ 
+
+
         if let cgImage = textOverlayImage?.cgImage {
+
             ctx.draw(cgImage, in: CGRect(origin: .zero, size: imageSize))
         }
     }
@@ -778,16 +773,20 @@ final class OfflineAnalysisManager: ObservableObject {
         return CGSize(width: abs(s.width), height: abs(s.height))
     }
 
-    private func processOnMain(processor: PoseDetectionManager,
-                               landmarks: [NormalizedLandmark],
-                               timestampMS: Int) -> (depthProgress: Double,
-                                                     repCount: Int,
-                                                     lastRepScore: Int,
-                                                     feedbackMessage: String,
-                                                     risk: RiskLevel,
-                                                     overlayColors: OverlayColors,
+    private func processOnMain(
+        processor: PoseDetectionManager,
+        landmarks: [NormalizedLandmark],
+        timestampMS: Int) -> (depthProgress: Double,
+                                repCount: Int,
+                                lastRepScore: Int,
+                                feedbackMessage: String,
+                                risk: RiskLevel,
+                                overlayColors: OverlayColors,
                                                      allMessages: [(message: String, severity: RuleSeverity)]) {
-        if Thread.isMainThread {
+        
+        if Thread.isMainThread 
+        
+        {
             processor.processLandmarks(landmarks, timestampMS: timestampMS)
             sessionSummary = processor.sessionSummary
             return (processor.depthProgress,
@@ -814,13 +813,15 @@ final class OfflineAnalysisManager: ObservableObject {
         return (result.0, result.1, result.2, result.3, result.4, result.5, result.6)
     }
     
+
+
     private func isEngagedForExercise(exercise: String, landmarks: [NormalizedLandmark]) -> Bool {
         guard landmarks.count > 28 else { return false }
         let normalized = exercise.lowercased()
         func vis(_ i: Int) -> Float { landmarks[i].visibility?.floatValue ?? 0 }
         if normalized.contains("squat") {
-            // Require at least one full leg chain (hip-knee-ankle) to be visible.
-            // This handles side-on video where the far-side limb may be occluded.
+
+
             let leftChain  = min(vis(23), vis(25), vis(27))
             let rightChain = min(vis(24), vis(26), vis(28))
             return max(leftChain, rightChain) >= 0.45
@@ -828,7 +829,9 @@ final class OfflineAnalysisManager: ObservableObject {
             let leftChain  = min(vis(11), vis(13), vis(15))
             let rightChain = min(vis(12), vis(14), vis(16))
             return max(leftChain, rightChain) >= 0.45
-        } else if normalized.contains("pull") {
+        } 
+        else if normalized.contains("pull") 
+        {
             let leftWrist    = landmarks[15]
             let rightWrist   = landmarks[16]
             let leftShoulder = landmarks[11]
@@ -838,10 +841,12 @@ final class OfflineAnalysisManager: ObservableObject {
             let rightChain   = min(vis(12), vis(14), vis(16))
             return !wristsBelow && max(leftChain, rightChain) >= 0.40
         }
+
         return true
     }
     
     private func angle3(_ a: (Double, Double), _ b: (Double, Double), _ c: (Double, Double)) -> Double {
+        
         let abx = a.0 - b.0, aby = a.1 - b.1
         let cbx = c.0 - b.0, cby = c.1 - b.1
         let dot = abx * cbx + aby * cby
@@ -849,6 +854,7 @@ final class OfflineAnalysisManager: ObservableObject {
         guard mag > 0 else { return 180 }
         return acos(max(-1.0, min(1.0, dot / mag))) * 180 / .pi
     }
+
 
     private func primaryAngle(exercise: String, landmarks: [NormalizedLandmark]) -> Double? {
         guard landmarks.count > 28 else { return nil }
@@ -866,7 +872,8 @@ final class OfflineAnalysisManager: ObservableObject {
     }
 
     private func colorFor(connection: (Int, Int), overlayColors: OverlayColors) -> UIColor {
-        switch connection {
+        switch connection 
+        {
         case (11, 13), (13, 15):
             return UIColor(overlayColors.leftArm)
         case (12, 14), (14, 16):

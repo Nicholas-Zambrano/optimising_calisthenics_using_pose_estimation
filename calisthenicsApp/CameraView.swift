@@ -8,40 +8,69 @@
 import SwiftUI
 import AVFoundation
 
+
+    // wrapping so live camera be be shown in swiftui
+
 struct CameraView: UIViewRepresentable {
+
     let session: AVCaptureSession
     let isMirrored: Bool
 
+
     class PreviewView: UIView {
+
         override class var layerClass: AnyClass { AVCaptureVideoPreviewLayer.self }
         var previewLayer: AVCaptureVideoPreviewLayer { layer as! AVCaptureVideoPreviewLayer }
     }
 
     class Coordinator: NSObject {
+        
         var isMirrored: Bool
         var observation: NSKeyValueObservation?
         weak var previewView: PreviewView?
 
-        init(isMirrored: Bool) { self.isMirrored = isMirrored }
+        init(isMirrored: Bool) { 
 
+            self.isMirrored = isMirrored
+             }
+
+
+        //  appling th preview configs and mirroring settings to active camera session
         func configureConnection() {
-            guard let connection = previewView?.previewLayer.connection else { return }
+            
+            guard let connection = previewView?.previewLayer.connection 
+            else { 
+                return
+                 }
+                
             if connection.isVideoRotationAngleSupported(90) {
+
                 connection.videoRotationAngle = 90
-            } else if connection.isVideoOrientationSupported {
+
+
+            } 
+            else if connection.isVideoOrientationSupported {
+
                 connection.videoOrientation = .portrait
             }
+
             if connection.isVideoMirroringSupported {
+
                 connection.automaticallyAdjustsVideoMirroring = false
                 connection.isVideoMirrored = isMirrored
             }
         }
     }
 
-    func makeCoordinator() -> Coordinator { Coordinator(isMirrored: isMirrored) }
+    func makeCoordinator() -> Coordinator { 
+        Coordinator(isMirrored: isMirrored) 
+        }
+
 
     func makeUIView(context: Context) -> PreviewView {
         let view = PreviewView()
+// attaching the camerra session to preview layer to render the live camera feed
+
         view.previewLayer.session = session
         view.previewLayer.videoGravity = .resizeAspectFill
 
@@ -57,8 +86,12 @@ struct CameraView: UIViewRepresentable {
         return view
     }
 
+    // updaing the view when ui changes 
+
     func updateUIView(_ uiView: PreviewView, context: Context) {
+        
         context.coordinator.isMirrored = isMirrored
         context.coordinator.configureConnection()
+        
     }
 }

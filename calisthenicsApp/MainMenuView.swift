@@ -13,6 +13,7 @@ import AVFoundation
 struct MainMenuView: View {
     @EnvironmentObject private var settings: AppSettings
     let exerciseData = [
+
         ("Push-Up", "push_up", "Target: Core & Chest"),
         ("Squat", "squat", "Target: Quads & Glutes"),
         ("Pull-Up", "pull_up", "Target: Back & Biceps")
@@ -30,12 +31,16 @@ struct MainMenuView: View {
     @State private var studyCondition: String = "baseline"
     @State private var studyConditionOrder: Int = 1
     
+
+
     var body: some View {
         let palette = Theme.palette(choice: settings.themeChoice, darkMode: settings.darkMode)
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 8)
+                 {
                     Text("Calisthenics Coach")
+
                         .font(.system(size: 34, weight: .heavy, design: .rounded))
                         .foregroundColor(palette.textPrimary)
                     Text("Train smarter with live feedback")
@@ -43,6 +48,7 @@ struct MainMenuView: View {
                         .foregroundColor(palette.textSecondary)
                 }
                 .padding(.horizontal)
+
                 HStack(spacing: 12) {
                     statChip(title: "Target", value: "\(settings.targetReps) reps", palette: palette)
                     statChip(title: "Sensitivity", value: settings.sensitivity.rawValue, palette: palette)
@@ -72,9 +78,11 @@ struct MainMenuView: View {
         }
         .background(
             NavigationLink(
+
                 destination: ExerciseSessionView(
                     selectedExercise: selectedExercise,
                     targetReps: selectedReps,
+                    
                     sensitivity: selectedSensitivity,
                     focus: selectedFocus,
                     audioEnabled: settings.userStudyMode && studyCondition == "baseline" ? false : settings.audioEnabled,
@@ -90,8 +98,12 @@ struct MainMenuView: View {
         )
     }
     
+
+
     private var repPickerSheet: some View {
+
         let palette = Theme.palette(choice: settings.themeChoice, darkMode: settings.darkMode)
+
         return VStack(spacing: 20) {
             Text("Set Your Target")
                 .font(.title2).bold()
@@ -108,6 +120,7 @@ struct MainMenuView: View {
             .padding(.horizontal)
             
             if selectedExercise == "Push-Up" {
+
                 Picker("Focus", selection: $selectedFocus) {
                     ForEach(FeedbackFocus.allCases, id: \.self) { mode in
                         Text(mode.rawValue).tag(mode)
@@ -135,6 +148,7 @@ struct MainMenuView: View {
             .padding(.horizontal)
             
             if settings.userStudyMode {
+
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Study Setup")
                         .font(.caption.bold())
@@ -176,6 +190,7 @@ struct MainMenuView: View {
             }
         }
         .padding()
+
         .presentationDetents(settings.userStudyMode ? [.large] : [.medium])
     }
 
@@ -194,6 +209,7 @@ struct MainMenuView: View {
         .cornerRadius(10)
     }
 }
+
 
 struct ExerciseCard: View {
     let name: String
@@ -220,6 +236,7 @@ struct ExerciseCard: View {
             }
             
             Spacer()
+            
             
             Image(systemName: "chevron.right")
                 .font(.footnote)

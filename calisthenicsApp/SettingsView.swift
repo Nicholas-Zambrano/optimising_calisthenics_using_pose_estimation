@@ -8,6 +8,8 @@ struct SettingsView: View {
         ZStack {
             palette.gradient.ignoresSafeArea()
             
+            
+            
             Form {
                 Section(header: Text("Appearance")) {
                     Toggle("Dark Theme", isOn: $settings.darkMode)
@@ -27,8 +29,9 @@ struct SettingsView: View {
                 }
 
                 Section(header: Text("Research"), footer: Text("When enabled, a pre-session form collects participant ID and condition before each session, and a CSV export button appears at session end.")) {
-                    Toggle("User Study Mode", isOn: $settings.userStudyMode)
+                     Toggle("User Study Mode", isOn: $settings.userStudyMode)
                 }
+                
                 
                 Section(header: Text("Targets")) {
                     Stepper(value: $settings.targetReps, in: 5...50, step: 1) {

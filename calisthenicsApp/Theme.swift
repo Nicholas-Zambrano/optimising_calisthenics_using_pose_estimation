@@ -24,8 +24,10 @@ struct ThemePalette {
 
 enum Theme {
     static func palette(choice: ThemeChoice, darkMode: Bool) -> ThemePalette {
-        switch choice {
+        switch choice 
+        {
         case .gold:
+
             return ThemePalette(
                 accent: Color(red: 0.94, green: 0.76, blue: 0.25),
                 accentAlt: Color(red: 0.32, green: 0.86, blue: 0.62),
@@ -36,6 +38,7 @@ enum Theme {
                 textPrimary: darkMode ? .white : Color(red: 0.06, green: 0.08, blue: 0.10),
                 textSecondary: darkMode ? Color.white.opacity(0.7) : Color(red: 0.25, green: 0.30, blue: 0.35)
             )
+
         case .electric:
             return ThemePalette(
                 accent: Color(red: 0.35, green: 0.65, blue: 1.00),
@@ -47,7 +50,9 @@ enum Theme {
                 textPrimary: darkMode ? .white : Color(red: 0.05, green: 0.08, blue: 0.12),
                 textSecondary: darkMode ? Color.white.opacity(0.7) : Color(red: 0.22, green: 0.28, blue: 0.36)
             )
+
         case .mint:
+        
             return ThemePalette(
                 accent: Color(red: 0.25, green: 0.92, blue: 0.70),
                 accentAlt: Color(red: 0.10, green: 0.75, blue: 0.55),

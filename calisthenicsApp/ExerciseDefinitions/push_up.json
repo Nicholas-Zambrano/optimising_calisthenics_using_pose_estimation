@@ -104,7 +104,7 @@
       "metric": "shoulderAsym",
       "op": "gt",
       "threshold": 0.12,
-      "appliesIn": ["front", "landscape"]
+      "appliesIn": ["fullBody", "landscape"]
     },
     {
       "id": "shoulder_asym",
@@ -113,7 +113,7 @@
       "metric": "shoulderAsym",
       "op": "gt",
       "threshold": 0.08,
-      "appliesIn": ["front", "landscape"]
+      "appliesIn": ["fullBody", "landscape"]
     },
     {
       "id": "elbow_diff",
@@ -122,7 +122,7 @@
       "metric": "elbowAngleDiff",
       "op": "gt",
       "threshold": 30,
-      "appliesIn": ["front"]
+      "appliesIn": ["fullBody", "landscape"]
     },
     {
       "id": "shallow_depth",
@@ -160,7 +160,7 @@
       "bottom": { "condition": "angle <= 110" }
     },
     "counter": { "from": "descent", "to": "bottom" },
-    "minRepDurationSec": 0.3
+    "minRepDurationSec": 0.8
   },
   "fsmSide": {
     "stateOrder": ["start", "descent", "bottom"],
@@ -169,7 +169,8 @@
       "descent": { "condition": "angle > 100 && angle <= 155" },
       "bottom": { "condition": "angle <= 115" }
     },
+    
     "counter": { "from": "descent", "to": "bottom" },
-    "minRepDurationSec": 0.3
+    "minRepDurationSec": 0.8
   }
 }

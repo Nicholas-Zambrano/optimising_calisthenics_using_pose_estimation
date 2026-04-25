@@ -17,11 +17,16 @@ struct OfflineAnalysisView: View {
     @State private var mirrorOverlay = false
     @State private var selectedRepID: UUID?
     @State private var repPlayer: AVPlayer?
+
     
     var body: some View {
+
+
         let palette = Theme.palette(choice: settings.themeChoice, darkMode: settings.darkMode)
         NavigationStack {
+
             ZStack {
+
                 palette.gradient.ignoresSafeArea()
                 
                 ScrollView {
@@ -30,9 +35,10 @@ struct OfflineAnalysisView: View {
                             .font(.system(size: 28, weight: .heavy, design: .rounded))
                             .foregroundColor(palette.textPrimary)
                         
-                        Text("Upload a workout video and get rep-by-rep feedback. For best results, record side-on for pull-ups and push-ups, or side-on / front-facing for squats.")
+                        Text("Upload a workout video and get rep-by-rep feedback. For the best results, record a side-on for pull-ups and push-ups, or side-on / front-facing for squats.")
                             .foregroundColor(palette.textSecondary)
                             .font(.subheadline)
+                        
                         
                         Picker("Exercise", selection: $selectedExercise) {
                             Text("Push-Up").tag("Push-Up")
@@ -40,6 +46,7 @@ struct OfflineAnalysisView: View {
                             Text("Pull-Up").tag("Pull-Up")
                         }
                         .pickerStyle(.segmented)
+
 
                         cameraGuideCard(for: selectedExercise, palette: palette)
 
@@ -49,6 +56,7 @@ struct OfflineAnalysisView: View {
                             .onChange(of: mirrorOverlay) { value in
                                 manager.mirrorOverlay = value
                             }
+                        
                         
                         PhotosPicker(selection: $selectedItem, matching: .videos) {
                             HStack {
@@ -61,12 +69,17 @@ struct OfflineAnalysisView: View {
                             .foregroundColor(palette.textPrimary)
                             .cornerRadius(12)
                         }
+
+
                         .onChange(of: selectedItem) { newItem in
-                            Task {
+                            Task
+                            
+                             {
                                 guard let item = newItem else { return }
                                 selectedRepID = nil
-                                repPlayer = nil
-                                savedHistory = false
+                                repPlayer =  nil
+                                savedHistory =  false
+                                
                                 if let data = try? await item.loadTransferable(type: Data.self) {
                                     let tempURL = FileManager.default.temporaryDirectory
                                         .appendingPathComponent("offline-\(UUID().uuidString).mov")
@@ -83,10 +96,14 @@ struct OfflineAnalysisView: View {
                             }
                         }
                         
+
                         Button {
                             guard let url = selectedURL else { return }
                             manager.analyseVideo(url: url, exercise: selectedExercise, settings: settings)
-                        } label: {
+                        } 
+                        
+                        label: 
+                        {
                             Text(manager.isRunning ? "Analysing..." : "Start Analysis")
                                 .font(.headline)
                                 .frame(maxWidth: .infinity)
@@ -95,6 +112,8 @@ struct OfflineAnalysisView: View {
                                 .foregroundColor(.black)
                                 .cornerRadius(12)
                         }
+
+
                         .disabled(selectedURL == nil || manager.isRunning)
                         
                         VStack(alignment: .leading, spacing: 6) {
@@ -105,7 +124,11 @@ struct OfflineAnalysisView: View {
                         }
                         .padding(.top, 8)
 
-                    if let summary = manager.sessionSummary {
+
+
+                    if let summary = manager.sessionSummary
+                    
+                     {
                         VStack(spacing: 10) {
                             summaryRow(label: "Total Reps", value: "\(summary.totalReps)")
                             summaryRow(label: "Avg Quality", value: "\(summary.averageScore)%")
@@ -160,6 +183,7 @@ struct OfflineAnalysisView: View {
                             Button {
                                 saveSnapshots()
                             } label: {
+
                                 Text("Save Snapshots to Photos")
                                     .font(.headline)
                                     .frame(maxWidth: .infinity)
@@ -172,7 +196,9 @@ struct OfflineAnalysisView: View {
                         .padding(.top, 8)
                     }
 
-                    if !manager.repSummaries.isEmpty {
+
+                    if !manager.repSummaries.isEmpty 
+                    {
                             let riskRank: (RiskLevel) -> Int = { r in r == .critical ? 2 : (r == .medium ? 1 : 0) }
                             let bestID = manager.repSummaries.max(by: {
                                 if $0.score != $1.score { return $0.score < $1.score }
@@ -182,6 +208,7 @@ struct OfflineAnalysisView: View {
                                 if $0.score != $1.score { return $0.score > $1.score }
                                 return riskRank($0.risk) < riskRank($1.risk)
                             })?.id : nil
+
                             VStack(alignment: .leading, spacing: 10) {
                                 Text("Rep Timeline — tap to review")
                                     .font(.headline)
@@ -190,7 +217,9 @@ struct OfflineAnalysisView: View {
                                 ForEach(manager.repSummaries) { rep in
                                     Button {
                                         selectedRepID = rep.id
-                                    } label: {
+                                    } label: 
+                                    
+                                    {
                                         HStack(spacing: 8) {
                                             Text("#\(rep.repIndex)")
                                                 .font(.caption.bold())
@@ -224,7 +253,8 @@ struct OfflineAnalysisView: View {
                                             Image(systemName: "play.circle.fill")
                                                 .font(.caption)
                                                 .foregroundColor(palette.textSecondary)
-                                        }
+                                        } 
+
                                         .padding(.horizontal, 10)
                                         .padding(.vertical, 8)
                                         .background(selectedRepID == rep.id ? palette.cardAlt.opacity(0.85) : palette.card.opacity(0.8))
@@ -233,6 +263,8 @@ struct OfflineAnalysisView: View {
                                     .buttonStyle(.plain)
                                 }
                             }
+
+
                             .padding(.top, 8)
                         }
 
@@ -343,6 +375,8 @@ struct OfflineAnalysisView: View {
                     .padding()
                 }
             }
+
+
             .navigationTitle("")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -352,6 +386,8 @@ struct OfflineAnalysisView: View {
             .alert(savedMessage, isPresented: $showSavedAlert) {
                 Button("OK", role: .cancel) { }
             }
+
+
             .onChange(of: manager.status) { newStatus in
                 guard newStatus == "Complete",
                       let summary = manager.sessionSummary,
@@ -381,6 +417,8 @@ struct OfflineAnalysisView: View {
         }
     }
     
+
+
     private func cameraGuideData(for exercise: String) -> (angle: String, height: String, tip: String) {
         let ex = exercise.lowercased()
         if ex.contains("pull") {
@@ -404,10 +442,11 @@ struct OfflineAnalysisView: View {
         }
     }
 
+
     private func cameraGuideCard(for exercise: String, palette: ThemePalette) -> some View {
         let data = cameraGuideData(for: exercise)
         return HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "camera.fill")
+             Image(systemName: "camera.fill")
                 .foregroundColor(.blue)
                 .font(.caption)
                 .padding(.top, 2)
@@ -416,6 +455,7 @@ struct OfflineAnalysisView: View {
                     .font(.caption.bold())
                     .foregroundColor(palette.textPrimary)
                 HStack(spacing: 4) {
+
                     Image(systemName: "arrow.triangle.turn.up.right.circle")
                         .font(.system(size: 9))
                     Text("Angle: \(data.angle)")
@@ -428,6 +468,8 @@ struct OfflineAnalysisView: View {
                     Text("Position: \(data.height)")
                         .font(.system(size: 11))
                 }
+
+
                 .foregroundColor(palette.textSecondary)
                 Text(data.tip)
                     .font(.system(size: 10))
@@ -435,6 +477,8 @@ struct OfflineAnalysisView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
+
+
         .padding(10)
         .background(Color.blue.opacity(0.08))
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.blue.opacity(0.25), lineWidth: 1))
@@ -449,12 +493,17 @@ struct OfflineAnalysisView: View {
         }
     }
 
-    private func saveSnapshots() {
+    private func saveSnapshots() 
+    {
         var saved = 0
+     
+     
         if let best = manager.bestSnapshot {
             UIImageWriteToSavedPhotosAlbum(best, nil, nil, nil)
             saved += 1
         }
+
+        
         if let worst = manager.worstSnapshot {
             UIImageWriteToSavedPhotosAlbum(worst, nil, nil, nil)
             saved += 1

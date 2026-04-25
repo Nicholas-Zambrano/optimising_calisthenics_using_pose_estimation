@@ -1,18 +1,21 @@
 import SwiftUI
 
-enum FeedbackSensitivity: String, CaseIterable {
+enum FeedbackSensitivity: String, CaseIterable 
+{
     case relaxed = "Relaxed"
     case normal = "Normal"
     case strict = "Strict"
     
     var yellowMultiplier: Double {
         switch self {
-        case .relaxed: return 1.30
+        case .relaxed:  return 1.30
         case .normal: return 1.20
         case .strict: return 1.10
         }
     }
     
+
+
     var redMultiplier: Double {
         switch self {
         case .relaxed: return 1.50
@@ -22,12 +25,17 @@ enum FeedbackSensitivity: String, CaseIterable {
     }
 }
 
+
+
 enum FeedbackFocus: String, CaseIterable {
     case armsOnly = "Front View"
     case fullBody = "Side View"
 }
 
-struct SessionSummary {
+
+
+struct SessionSummary
+ {
     let totalReps: Int
     let averageScore: Int
     let cleanReps: Int
@@ -36,7 +44,10 @@ struct SessionSummary {
     let mostCommonIssueMessage: String?
 }
 
-struct OverlayColors {
+
+
+struct OverlayColors 
+{
     var leftArm: Color
     var rightArm: Color
     var torso: Color
@@ -44,7 +55,9 @@ struct OverlayColors {
     var rightLeg: Color
     var hasCritical: Bool = false
     
+
     static let neutral = OverlayColors(
+
         leftArm: .white.opacity(0.6),
         rightArm: .white.opacity(0.6),
         torso: .white.opacity(0.6),
@@ -54,6 +67,7 @@ struct OverlayColors {
 }
 
 struct RepMetric: Identifiable {
+
     let id = UUID()
     let repIndex: Int
     let timestampMS: Int
@@ -65,7 +79,8 @@ struct RepMetric: Identifiable {
     let forwardLean: Double?
 }
 
-struct FrontViewMetrics {
+struct FrontViewMetrics 
+{
     let hipDropRatio: Double
     let hipRiseRatio: Double
     let elbowFlareRatio: Double

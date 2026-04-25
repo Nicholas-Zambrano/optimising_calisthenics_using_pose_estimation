@@ -31,32 +31,41 @@ struct ExerciseSessionView: View {
     @State private var exportURL: URL?
 
     var body: some View {
+
+        
         let palette = Theme.palette(choice: settings.themeChoice, darkMode: settings.darkMode)
         GeometryReader { geo in
             ZStack {
+
                 CameraView(session: poseManager.session, isMirrored: poseManager.isFrontCamera).ignoresSafeArea()
             
             if !isCountingDown, !poseManager.isSessionComplete, let currentLandmarks = poseManager.latestLandmarks {
                 LandmarkOverlayView(
+
                     landmarks: currentLandmarks,
                     overlayColors: baselineMode ? .neutral : poseManager.overlayColors,
                     mirrorX: poseManager.isFrontCamera
                 ).ignoresSafeArea()
 
                 if !baselineMode {
-                    InstructionOverlayView(
-                        landmarks: currentLandmarks,
+
+                    InstructionOverlayView
+                    (
+                        landmarks:  currentLandmarks,
                         primary: poseManager.feedbackMessage,
                         secondary: poseManager.secondaryHint,
                         mirrorX: poseManager.isFrontCamera
                     )
+
                     .ignoresSafeArea()
                 }
             }
             
             VStack {
+
                 HStack {
-                    Button(action: { poseManager.toggleCamera() }) {
+                    Button(action: 
+                    { poseManager.toggleCamera() }) {
                         Image(systemName: "camera.rotate.fill")
                             .font(.system(size: 22, weight: .bold))
                             .padding()
@@ -64,7 +73,9 @@ struct ExerciseSessionView: View {
                             .foregroundColor(palette.textPrimary)
                             .clipShape(Circle())
                     }
+
                     .disabled(!isCountingDown)
+
                     .opacity(isCountingDown ? 1.0 : 0.4)
                     Text(poseManager.isFrontCamera ? "Front Camera" : "Back Camera")
                         .font(.caption.bold())
@@ -108,6 +119,8 @@ struct ExerciseSessionView: View {
                         }
                     }
                     .padding(.top, 20)
+
+
 
                     if !baselineMode {
                         VStack(spacing: 6) {
@@ -208,6 +221,7 @@ struct ExerciseSessionView: View {
             if poseManager.isSessionComplete, let summary = poseManager.sessionSummary {
                 Color.black.opacity(0.6).ignoresSafeArea()
                 VStack(spacing: 16) {
+
                     Text("Session Summary")
                         .font(.title2).bold()
                         .foregroundColor(palette.textPrimary)
@@ -269,15 +283,19 @@ struct ExerciseSessionView: View {
             }
             
             if isCountingDown {
-                Color.black.opacity(0.5).ignoresSafeArea()
+
+                 Color.black.opacity(0.5).ignoresSafeArea()
                 VStack(spacing: 20) {
+
                     Text("Get into Position").font(.title2).bold().foregroundColor(.white)
+
                     Text("\(countdown)").font(.system(size: 120, weight: .black)).foregroundColor(.white)
                 }
             }
             }
         .navigationBarBackButtonHidden(true)
         .onAppear {
+
             poseManager.cameraPosition = useFrontCamera ? .front : .back
             poseManager.isFrontCamera = useFrontCamera
             poseManager.isPortraitMode = geo.size.height >= geo.size.width
@@ -285,13 +303,15 @@ struct ExerciseSessionView: View {
             poseManager.debugEnabled = settings.debugEnabled
             if selectedExercise == "Squat" {
                 poseManager.squatViewMode = squatViewMode
-            } else {
+            }
+             else {
                 poseManager.squatViewMode = .auto
             }
             startSequence()
         }
             .onChange(of: geo.size) { newSize in
                 poseManager.isPortraitMode = newSize.height >= newSize.width
+
             }
             .onChange(of: settings.debugEnabled) { value in
                 poseManager.debugEnabled = value
@@ -309,15 +329,23 @@ struct ExerciseSessionView: View {
     }
     
     private var feedbackColor: Color {
-        if poseManager.feedbackMessage.hasPrefix("CRITICAL") { return .red }
-        if poseManager.feedbackMessage.hasPrefix("IMPORTANT") { return .orange }
-        if poseManager.feedbackMessage.hasPrefix("MINOR") { return .blue }
-        if poseManager.feedbackMessage.hasPrefix("GOOD") { return .green }
+
+        if poseManager.feedbackMessage.hasPrefix("CRITICAL") {
+             return .red }
+        if poseManager.feedbackMessage.hasPrefix("IMPORTANT") { 
+            return .orange }
+        if poseManager.feedbackMessage.hasPrefix("MINOR") { 
+            return .blue }
+        if poseManager.feedbackMessage.hasPrefix("GOOD") { 
+            return .green }
         return .black.opacity(0.7)
     }
     
-    private var depthColor: Color {
-        if poseManager.depthProgress > 0.9 { return .green }
+    private var depthColor: Color
+    {
+        if poseManager.depthProgress > 0.9 { 
+            return .green
+             }
         if poseManager.depthProgress > 0.7 { return .yellow }
         return .red
     }
@@ -346,6 +374,8 @@ struct ExerciseSessionView: View {
     }
 
     func startSequence() {
+
+        
         poseManager.activeExercise = selectedExercise
         poseManager.isCoachingActive = false
         poseManager.resetForNewSession(targetReps: targetReps, sensitivity: sensitivity)

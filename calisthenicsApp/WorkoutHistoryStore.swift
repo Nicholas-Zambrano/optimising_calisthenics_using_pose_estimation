@@ -42,6 +42,7 @@ final class WorkoutHistoryStore: ObservableObject {
     }
     
     private func load() {
+        
         guard let data = try? Data(contentsOf: fileURL) else { return }
         if let decoded = try? JSONDecoder().decode([SessionRecord].self, from: data) {
             sessions = decoded

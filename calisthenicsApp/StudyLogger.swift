@@ -63,6 +63,7 @@ final class StudyLogger {
     }
 
     func exportURL(participantID: String, condition: String) -> URL? {
+        
         let csv = buildCSV()
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyyMMdd_HHmmss"

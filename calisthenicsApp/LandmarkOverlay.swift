@@ -78,6 +78,8 @@ struct InstructionOverlayView: View {
 
     var body: some View {
         GeometryReader { _ in
+
+
             Canvas { context, size in
                 let shoulderL = point(landmarks[11], size)
                 let shoulderR = point(landmarks[12], size)
@@ -89,14 +91,17 @@ struct InstructionOverlayView: View {
                 let shoulderMid = mid(shoulderL, shoulderR)
                 let hipMid = mid(hipL, hipR)
                 
+
                 if primary.contains("Tuck elbows") || secondary.contains("Tuck elbows") {
                     drawArrow(context: &context, from: wristL, to: CGPoint(x: wristL.x + 30, y: wristL.y), color: .yellow)
                     drawArrow(context: &context, from: wristR, to: CGPoint(x: wristR.x - 30, y: wristR.y), color: .yellow)
                 }
+
                 
                 if primary.contains("Keep hips") || secondary.contains("Keep hips") || primary.contains("Lift hips") || secondary.contains("Lift hips") {
                     drawArrow(context: &context, from: hipMid, to: CGPoint(x: hipMid.x, y: hipMid.y - 40), color: .red)
                 }
+
                 
                 if primary.contains("Go deeper") || secondary.contains("Go deeper") {
                     drawArrow(context: &context, from: shoulderMid, to: CGPoint(x: shoulderMid.x, y: shoulderMid.y + 50), color: .orange)
@@ -105,16 +110,21 @@ struct InstructionOverlayView: View {
                 if primary.contains("Even out your weight") || secondary.contains("Even out your weight") {
                     drawArrow(context: &context, from: hipL, to: hipMid, color: .blue)
                     drawArrow(context: &context, from: hipR, to: hipMid, color: .blue)
+                
                 }
             }
         }
     }
+
+
 
     private func point(_ lm: NormalizedLandmark, _ size: CGSize) -> CGPoint {
         let x = CGFloat(lm.x) * size.width
         let mirroredX = mirrorX ? (size.width - x) : x
         return CGPoint(x: mirroredX, y: CGFloat(lm.y) * size.height)
     }
+
+
 
     private func mid(_ a: CGPoint, _ b: CGPoint) -> CGPoint {
         CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2)
@@ -126,16 +136,21 @@ struct InstructionOverlayView: View {
         path.addLine(to: to)
         context.stroke(path, with: .color(color), lineWidth: 3)
         
+
         let angle = atan2(to.y - from.y, to.x - from.x)
         let headLength: CGFloat = 10
         let left = CGPoint(
             x: to.x - headLength * cos(angle - .pi / 6),
             y: to.y - headLength * sin(angle - .pi / 6)
         )
-        let right = CGPoint(
+
+        let right = CGPoint
+        (
             x: to.x - headLength * cos(angle + .pi / 6),
             y: to.y - headLength * sin(angle + .pi / 6)
         )
+
+        
         var head = Path()
         head.move(to: to)
         head.addLine(to: left)

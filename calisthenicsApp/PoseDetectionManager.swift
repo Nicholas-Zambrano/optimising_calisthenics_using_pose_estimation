@@ -49,21 +49,27 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
     private let pushUpConfig = ExerciseDefinitionStore.shared.pushUp
     private let squatConfig = ExerciseDefinitionStore.shared.squat
     private let pullUpConfig = ExerciseDefinitionStore.shared.pullUp
-    private lazy var engine = ExerciseEngine(
+    private lazy var engine = ExerciseEngine
+    (
         evaluator: evaluator,
         pushUpConfig: pushUpConfig,
         squatConfig: squatConfig,
         pullUpConfig: pullUpConfig
     )
+
     private let synthesiser = AVSpeechSynthesizer()
     private var lastSpokenMessage = ""
+
 
     private var lastPoseMode: PushUpPostureMode = .none
     private var lastPoseModeTimestampMS: Int?
     
+
     private func chooseBestSide(landmarks: [NormalizedLandmark]) -> (shoulder: NormalizedLandmark, elbow: NormalizedLandmark, wrist: NormalizedLandmark, hip: NormalizedLandmark, knee: NormalizedLandmark, ankle: NormalizedLandmark) {
         let left = (landmarks[11], landmarks[13], landmarks[15], landmarks[23], landmarks[25], landmarks[27])
         let right = (landmarks[12], landmarks[14], landmarks[16], landmarks[24], landmarks[26], landmarks[28])
+        
+        
         
         func avgVis(_ side: (NormalizedLandmark, NormalizedLandmark, NormalizedLandmark, NormalizedLandmark, NormalizedLandmark, NormalizedLandmark)) -> Float {
             let values: [Float] = [
@@ -86,7 +92,10 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
         setupLandmarker()
     }
     
-    func resetForNewSession(targetReps: Int, sensitivity: FeedbackSensitivity) {
+
+
+    func resetForNewSession(targetReps: Int, sensitivity: FeedbackSensitivity) 
+    {
         self.targetReps = targetReps
         self.sensitivity = sensitivity
         repCount = 0
@@ -106,6 +115,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
     }
     
     private func configureAudioSession() {
+
         let audioSession = AVAudioSession.sharedInstance()
         do {
             try audioSession.setCategory(.playback, options: [.duckOthers, .mixWithOthers])
@@ -125,6 +135,8 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
     }
 
     func stopSession() {
+
+
         isCoachingActive = false
         isDetectionPaused = true
         sessionQueue.async { [weak self] in
@@ -201,6 +213,8 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
                 visibility: nil,
                 presence: nil
             )
+
+
             let leftHipVis = leftHip.visibility?.floatValue ?? 0
             let rightHipVis = rightHip.visibility?.floatValue ?? 0
             let leftAnkle = landmarks[27]
@@ -212,12 +226,15 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
             let leftElbowVis = landmarks[13].visibility?.floatValue ?? 0
             let rightElbowVis = landmarks[14].visibility?.floatValue ?? 0
             
+
             let sideMinVis: Float = 0.40
             let frontMinVis: Float = 0.50
             
             let anklesVisible: Bool
             let hipsVisible: Bool
             let armsVisible: Bool
+
+
             if effectivePostureMode == .side {
                 let sideHipVis = hip.visibility?.floatValue ?? 0
                 let sideAnkleVis = ankle.visibility?.floatValue ?? 0
@@ -239,6 +256,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
             let elbowFlareRatio = min(1.0, abs(Double(wrist.x - shoulder.x)) / shoulderWidth)
             let shoulderAsym = abs(Double(leftShoulder.y - rightShoulder.y)) / torsoLength
             let hipAsym = abs(Double(leftHip.y - rightHip.y)) / torsoLength
+            
             let frontMetrics = FrontViewMetrics(
                 hipDropRatio: hipDropRatio,
                 hipRiseRatio: hipRiseRatio,
@@ -249,15 +267,19 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
                 anklesVisible: anklesVisible,
                 armsVisible: armsVisible
             )
+
+
             if debugEnabled {
                 if !armsVisible {
                     self.debugText = "Arms not visible — move closer"
                 }
             }
             
+
             let leftElbowAngle = self.evaluator.calculateAngle(p1: leftShoulder, p2: landmarks[13], p3: landmarks[15])
             let rightElbowAngle = self.evaluator.calculateAngle(p1: rightShoulder, p2: landmarks[14], p3: landmarks[16])
             let elbowAngleDiff = abs(leftElbowAngle - rightElbowAngle)
+
 
             let output = engine.updatePushUp(
                 metrics: metrics,
@@ -286,7 +308,8 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
             sessionSummary = output.sessionSummary
             debugText = output.debugText
 
-            if isStudyModeActive && output.repCount > prevRepCount {
+            if isStudyModeActive && output.repCount > 
+             {
                 let allMsgs = engine.lastRepAllMessages
                 let ruleIDs = engine.lastRepRuleIDs
                 let riskStr: String = allMsgs.contains(where: { $0.severity == .critical }) ? "critical" :
@@ -312,6 +335,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
                 ))
             }
 
+
             if let speak = output.speakMessage, isCoachingActive {
                 speakFeedback(speak, force: true)
             }
@@ -323,6 +347,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
                 endSession()
             }
 
+
         case "Squat":
             let output = engine.updateSquat(
                 landmarks: landmarks,
@@ -330,6 +355,8 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
                 enableDebug: debugEnabled,
                 viewMode: squatViewMode
             )
+
+
             let prevRepCountSq = repCount
             repCount = output.repCount
             cleanReps = output.cleanReps
@@ -371,6 +398,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
                 ))
             }
 
+
             if let speak = output.speakMessage, isCoachingActive {
                 speakFeedback(speak, force: true)
             }
@@ -380,6 +408,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
                 landmarks: landmarks,
                 timestampMS: timestampMS
             )
+
             let prevRepCountPu = repCount
             repCount = output.repCount
             cleanReps = output.cleanReps
@@ -395,11 +424,13 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
             sessionSummary = output.sessionSummary
             debugText = output.debugText
 
-            if isStudyModeActive && output.repCount > prevRepCountPu {
+            if isStudyModeActive && output.repCount > prevRepCountPu 
+            {
                 let allMsgs = engine.lastRepAllMessages
                 let ruleIDs = engine.lastRepRuleIDs
                 let riskStr: String = allMsgs.contains(where: { $0.severity == .critical }) ? "critical" :
                     (allMsgs.contains(where: { $0.severity == .important }) ? "important" : "clean")
+                
                 StudyLogger.shared.logRep(StudyRepRow(
                     participantID: studyParticipantID,
                     exercise: "Pull-Up",
@@ -424,6 +455,8 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
         }
     }
     
+
+
     func poseLandmarker(_ poseLandmarker: PoseLandmarker, didFinishDetection result: PoseLandmarkerResult?, timestampInMilliseconds: Int, error: Error?) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
@@ -440,7 +473,8 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
     }
 
 
-    func checkPermissionAndStart() {
+    func checkPermissionAndStart() 
+    {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized: self.startCamera()
         case .notDetermined:
@@ -450,6 +484,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
         default: print("Please enable camera in iPhone Settings")
         }
     }
+    
     
     func toggleCamera() {
         DispatchQueue.main.async {
@@ -481,56 +516,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
         }
     }
 
-//    private func startCamera() {
-//        sessionQueue.async { [weak self] in
-//            guard let self = self else { return }
-//            if self.session.isRunning { self.session.stopRunning() }
-//            self.session.beginConfiguration()
-//            
-//            // 1. Clear old inputs/outputs
-//            self.session.inputs.forEach { self.session.removeInput($0) }
-//            self.session.outputs.forEach { self.session.removeOutput($0) }
-//            
-//            let position: AVCaptureDevice.Position = self.isFrontCamera ? .front : .back
-//            guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: position),
-//                  let videoInput = try? AVCaptureDeviceInput(device: videoDevice) else {
-//                print("[Camera] Failed to access camera")
-//                self.session.commitConfiguration()
-//                return
-//            }
-//            
-//            // 2. Add input first
-//            if self.session.canAddInput(videoInput) { self.session.addInput(videoInput) }
-//            
-//            // 3. Then set resolution
-//            if self.session.canSetSessionPreset(.hd1280x720) {
-//                self.session.sessionPreset = .hd1280x720
-//            } else {
-//                self.session.sessionPreset = .high
-//            }
-//            
-//            // 4. Add output
-//            let videoOutput = AVCaptureVideoDataOutput()
-//            videoOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
-//            videoOutput.alwaysDiscardsLateVideoFrames = true
-//            videoOutput.setSampleBufferDelegate(self, queue: self.videoQueue)
-//            
-//            if self.session.canAddOutput(videoOutput) {
-//                self.session.addOutput(videoOutput)
-//                if let connection = videoOutput.connection(with: .video) {
-//                    if connection.isVideoOrientationSupported {
-//                        connection.videoOrientation = .portrait
-//                    }
-//                    if connection.isVideoMirroringSupported {
-//                        connection.isVideoMirrored = self.isFrontCamera
-//                    }
-//                }
-//            }
-//            
-//            self.session.commitConfiguration()
-//            if !self.session.isRunning { self.session.startRunning() }
-//        }
-//    }
+
 
     private func startCamera() {
         sessionQueue.async { [weak self] in
@@ -578,6 +564,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
                 }
             }
             
+
             self.session.commitConfiguration()
             if !self.session.isRunning { self.session.startRunning() }
         }
@@ -585,6 +572,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
     
     
     private func setupLandmarker() {
+        
         guard let modelPath = Bundle.main.path(forResource: "pose_landmarker_lite", ofType: "task") else { return }
         let options = PoseLandmarkerOptions()
         options.baseOptions.modelAssetPath = modelPath

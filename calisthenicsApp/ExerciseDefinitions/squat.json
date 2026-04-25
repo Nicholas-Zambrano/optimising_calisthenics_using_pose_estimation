@@ -23,6 +23,7 @@
       "threshold": 1.10,
       "appliesIn": ["squat", "side"]
     },
+    
     {
       "id": "leaning_forward",
       "severity": "critical",
