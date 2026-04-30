@@ -1,9 +1,9 @@
 import SwiftUI
 
-//  root view for the app, defining the main navifations
+
 struct AppShellView: View {
 
-    //  these are the overall seeting for all views
+
     @StateObject private var settings = AppSettings()
     @StateObject private var historyStore = WorkoutHistoryStore()
     

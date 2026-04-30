@@ -39,12 +39,14 @@ struct SettingsView: View {
                     }
                 }
                 
+
                 Section(header: Text("Feedback")) {
                     Picker("Sensitivity", selection: $settings.sensitivity) {
                         ForEach(FeedbackSensitivity.allCases, id: \.self) { level in
                             Text(level.rawValue).tag(level)
                         }
                     }
+                    
                     Picker("Focus", selection: $settings.focus) {
                         ForEach(FeedbackFocus.allCases, id: \.self) { mode in
                             Text(mode.rawValue).tag(mode)

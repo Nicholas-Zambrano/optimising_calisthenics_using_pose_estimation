@@ -61,12 +61,15 @@ struct ExerciseSessionView: View {
                 }
             }
             
+
             VStack {
 
                 HStack {
                     Button(action: 
                     { poseManager.toggleCamera() }) {
-                        Image(systemName: "camera.rotate.fill")
+
+
+                        Image(systemName:  "camera.rotate.fill")
                             .font(.system(size: 22, weight: .bold))
                             .padding()
                             .background(palette.cardAlt.opacity(0.9))
@@ -76,35 +79,39 @@ struct ExerciseSessionView: View {
 
                     .disabled(!isCountingDown)
 
-                    .opacity(isCountingDown ? 1.0 : 0.4)
-                    Text(poseManager.isFrontCamera ? "Front Camera" : "Back Camera")
+                    .opacity(isCountingDown ? 1.0  : 0.4)
+                    Text(poseManager.isFrontCamera ?  "Front Camera" : "Back Camera")
                         .font(.caption.bold())
                         .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
+                        .padding(.vertical,  6)
                         .background(palette.cardAlt.opacity(0.9))
                         .foregroundColor(palette.textPrimary)
+
                         .clipShape(Capsule())
                     Spacer()
                     Button(action: {
                         poseManager.stopSession()
                         dismiss()
                     }) {
+
                         Image(systemName: "xmark")
                             .font(.system(size: 22, weight: .bold))
                             .padding()
-                            .background(palette.cardAlt.opacity(0.9))
+                            .background(palette.cardAlt.opacity(0.9) )
                             .foregroundColor(palette.textPrimary)
                             .clipShape(Circle())
                     }
                 }
-                .padding(.horizontal, 25)
+                .padding(.horizontal, 25 )
                 .padding(.top, 50)
                 
                 if !isCountingDown {
                     HStack(spacing: 16) {
                         statCard(title: "REPS", value: "\(poseManager.repCount)", palette: palette)
+
                         if !baselineMode {
                             VStack {
+
                                 Text("\(poseManager.overallScore)%")
                                     .font(.system(size: 30, weight: .black))
                                     .foregroundColor(scoreColor)
@@ -113,19 +120,23 @@ struct ExerciseSessionView: View {
                                     .font(.caption2)
                                     .foregroundColor(palette.textSecondary)
                             }
-                            .frame(width: 120, height: 90)
+                            .frame(width: 120, height: 90  )
                             .background(palette.card.opacity(0.9))
                             .cornerRadius(16)
                         }
                     }
+
                     .padding(.top, 20)
 
 
 
                     if !baselineMode {
+
                         VStack(spacing: 6) {
+
                             Text("DEPTH")
                                 .font(.caption).bold()
+
                                 .foregroundColor(palette.textPrimary)
                             GeometryReader { geo in
                                 ZStack(alignment: .leading) {
@@ -135,6 +146,7 @@ struct ExerciseSessionView: View {
                                         .frame(width: max(8, geo.size.width * poseManager.depthProgress))
                                 }
                             }
+
                             .frame(height: 10)
                             .frame(width: 180)
                         }
@@ -145,6 +157,7 @@ struct ExerciseSessionView: View {
                 Spacer()
                 
                 if !isCountingDown && !baselineMode {
+
                     VStack(spacing: 6) {
                         Text(poseManager.feedbackMessage)
                             .font(.headline)
@@ -154,6 +167,7 @@ struct ExerciseSessionView: View {
                                 .foregroundColor(palette.textSecondary)
                         }
                     }
+
                     .padding()
                     .background(feedbackColor.opacity(0.9))
                     .foregroundColor(palette.textPrimary)
@@ -161,9 +175,11 @@ struct ExerciseSessionView: View {
                     .padding(.bottom, 40)
                 }
             }
+
             
             if settings.debugEnabled && !isCountingDown && !poseManager.isSessionComplete && !poseManager.debugText.isEmpty {
                 VStack {
+
                     HStack {
                         Text(poseManager.debugText)
                             .font(.caption2)
@@ -174,6 +190,7 @@ struct ExerciseSessionView: View {
                         Spacer()
                     }
                     Spacer()
+
                 }
                 .padding(.top, 100)
                 .padding(.horizontal, 16)
@@ -181,42 +198,54 @@ struct ExerciseSessionView: View {
 
             if settings.debugEnabled && selectedExercise == "Squat" && !poseManager.repMetrics.isEmpty && !isCountingDown {
                 VStack {
+
                     Spacer()
+
                     VStack(alignment: .leading, spacing: 6) {
+
                         Text("Rep Timeline")
                             .font(.caption.bold())
                             .foregroundColor(palette.textPrimary)
-                        ForEach(poseManager.repMetrics) { rep in
+                        ForEach(poseManager.repMetrics) {  rep in
                             HStack(spacing: 8) {
                                 Text("#\(rep.repIndex)")
                                     .font(.caption2.bold())
+
                                     .frame(width: 28, alignment: .leading)
                                 Text("\(rep.score)%")
                                     .font(.caption2)
                                     .frame(width: 40, alignment: .leading)
-                                if let valgus = rep.kneeValgus {
+
+                                if let valgus = rep.kneeValgus 
+                                
+                                {
                                     Text(String(format: "valgus %.2f", valgus))
                                         .font(.caption2)
                                 }
+
                                 if let lean = rep.forwardLean {
                                     Text(String(format: "lean %.2f", lean))
                                         .font(.caption2)
                                 }
                                 Spacer()
-                                Text(rep.primaryMessage)
+                                Text(  rep.primaryMessage)
                                     .font(.caption2)
                                     .lineLimit(1)
                                     .foregroundColor(palette.textSecondary)
                             }
                         }
+
+
                     }
+
                     .padding(10)
                     .background(palette.cardAlt.opacity(0.9))
                     .cornerRadius(10)
                     .padding(.horizontal, 16)
-                    .padding(.bottom, 20)
+                    .padding(  .bottom, 20)
                 }
             }
+
 
             if poseManager.isSessionComplete, let summary = poseManager.sessionSummary {
                 Color.black.opacity(0.6).ignoresSafeArea()
@@ -227,19 +256,21 @@ struct ExerciseSessionView: View {
                         .foregroundColor(palette.textPrimary)
                     
                     VStack(spacing: 10) {
-                        summaryRow(label: "Total Reps", value: "\(summary.totalReps)", palette: palette)
+                        summaryRow(label: "Total Reps", value: "\(summary.totalReps)",  palette: palette)
                         summaryRow(label: "Avg Quality", value: "\(summary.averageScore)%", palette: palette)
-                        summaryRow(label: "Clean Reps", value: "\(summary.cleanReps)", palette: palette)
+                        summaryRow(label: "Clean Reps", value: "\(summary.cleanReps)", palette:  palette)
                         summaryRow(label: "Best Rep", value: "\(summary.bestRep)%", palette: palette)
                         summaryRow(label: "Worst Rep", value: "\(summary.worstRep)%", palette: palette)
                         if let issue = summary.mostCommonIssueMessage {
                             summaryRow(label: "Most Common", value: issue, palette: palette)
                         }
+
                     }
                     .padding()
                     .background(palette.card.opacity(0.95))
                     .cornerRadius(16)
                     
+
                     if settings.userStudyMode {
                         Button {
                             if let url = StudyLogger.shared.exportURL(participantID: participantID, condition: studyCondition) {
@@ -247,7 +278,9 @@ struct ExerciseSessionView: View {
                                 showShareSheet = true
                             }
                         } label: {
-                            Label("Export CSV", systemImage: "square.and.arrow.up")
+                            Label("Export CSV", systemImage:  "square.and.arrow.up")
+
+
                                 .font(.headline)
                                 .padding(.horizontal, 24)
                                 .padding(.vertical, 12)
@@ -255,9 +288,12 @@ struct ExerciseSessionView: View {
                                 .foregroundColor(.black)
                                 .cornerRadius(12)
                         }
+
                     }
 
-                    NavigationLink(destination: MainMenuView()) {
+
+                    NavigationLink(destination: MainMenuView())
+                     {
                         Text("Back to Home")
                             .font(.headline)
                             .padding(.horizontal, 24)
@@ -265,15 +301,18 @@ struct ExerciseSessionView: View {
                             .background(palette.accent)
                             .foregroundColor(.black)
                             .cornerRadius(12)
+
                     }
                 }
                 .padding()
+
                 .sheet(isPresented: $showShareSheet) {
                     if let url = exportURL {
                         ShareSheet(items: [url])
                     }
                 }
                 .onAppear {
+
                     historyStore.addSession(
                         exercise: selectedExercise,
                         summary: summary,
@@ -293,6 +332,7 @@ struct ExerciseSessionView: View {
                 }
             }
             }
+
         .navigationBarBackButtonHidden(true)
         .onAppear {
 
@@ -301,15 +341,21 @@ struct ExerciseSessionView: View {
             poseManager.isPortraitMode = geo.size.height >= geo.size.width
             poseManager.isCoachingActive = audioEnabled
             poseManager.debugEnabled = settings.debugEnabled
-            if selectedExercise == "Squat" {
+            
+            if selectedExercise == "Squat" 
+            {
+
                 poseManager.squatViewMode = squatViewMode
             }
              else {
+
                 poseManager.squatViewMode = .auto
             }
             startSequence()
         }
-            .onChange(of: geo.size) { newSize in
+        
+            .onChange(of: geo.size) { 
+                newSize in
                 poseManager.isPortraitMode = newSize.height >= newSize.width
 
             }
@@ -332,6 +378,7 @@ struct ExerciseSessionView: View {
 
         if poseManager.feedbackMessage.hasPrefix("CRITICAL") {
              return .red }
+
         if poseManager.feedbackMessage.hasPrefix("IMPORTANT") { 
             return .orange }
         if poseManager.feedbackMessage.hasPrefix("MINOR") { 
@@ -340,12 +387,14 @@ struct ExerciseSessionView: View {
             return .green }
         return .black.opacity(0.7)
     }
+
     
     private var depthColor: Color
     {
         if poseManager.depthProgress > 0.9 { 
             return .green
              }
+
         if poseManager.depthProgress > 0.7 { return .yellow }
         return .red
     }
@@ -355,16 +404,18 @@ struct ExerciseSessionView: View {
             Text(value)
                 .font(.system(size: 40, weight: .black))
                 .foregroundColor(palette.textPrimary)
-            Text(title)
+            Text( title)
                 .font(.caption).bold()
                 .foregroundColor(palette.textSecondary)
         }
+
         .frame(width: 100, height: 90)
         .background(palette.cardAlt.opacity(0.9))
         .cornerRadius(16)
     }
 
     private func summaryRow(label: String, value: String, palette: ThemePalette) -> some View {
+        
         HStack {
             Text(label).foregroundColor(palette.textSecondary)
             Spacer()

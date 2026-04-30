@@ -34,6 +34,7 @@ struct OfflineAnalysisView: View {
                         Text("Offline Analysis")
                             .font(.system(size: 28, weight: .heavy, design: .rounded))
                             .foregroundColor(palette.textPrimary)
+
                         
                         Text("Upload a workout video and get rep-by-rep feedback. For the best results, record a side-on for pull-ups and push-ups, or side-on / front-facing for squats.")
                             .foregroundColor(palette.textSecondary)
@@ -91,6 +92,7 @@ struct OfflineAnalysisView: View {
                                         manager.status = "Failed to load video"
                                     }
                                 } else {
+
                                     manager.status = "Failed to read video"
                                 }
                             }
@@ -112,6 +114,7 @@ struct OfflineAnalysisView: View {
                                 .foregroundColor(.black)
                                 .cornerRadius(12)
                         }
+
 
 
                         .disabled(selectedURL == nil || manager.isRunning)
@@ -508,6 +511,7 @@ struct OfflineAnalysisView: View {
             UIImageWriteToSavedPhotosAlbum(worst, nil, nil, nil)
             saved += 1
         }
+        
         savedMessage = saved > 0 ? "Saved \(saved) snapshot(s) to Photos" : "No snapshots to save"
         showSavedAlert = true
     }

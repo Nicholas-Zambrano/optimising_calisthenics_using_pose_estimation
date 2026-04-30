@@ -20,7 +20,7 @@
       "metric": "shoulderAsym",
       "op": "gt",
       "threshold": 0.12,
-      "appliesIn": ["pullup"]
+      "appliesIn":  ["pullup"]
     },
     {
       "id": "pullup_asymmetry_elbow",

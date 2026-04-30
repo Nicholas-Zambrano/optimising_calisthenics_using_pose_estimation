@@ -49,6 +49,7 @@ final class WorkoutHistoryStore: ObservableObject {
         }
     }
     
+    
     private func save() {
         guard let data = try? JSONEncoder().encode(sessions) else { return }
         try? data.write(to: fileURL, options: [.atomic])

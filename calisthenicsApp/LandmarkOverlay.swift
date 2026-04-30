@@ -16,12 +16,14 @@ struct LandmarkOverlayView: View {
     var mirrorX: Bool = false
     
     private let connections = [
-        (11, 12), (11, 13), (13, 15), // Right Arm
-        (12, 14), (14, 16),           // Left Arm
-        (11, 23), (12, 24), (23, 24), // Torso
-        (23, 25), (25, 27),           // Right Leg
-        (24, 26), (26, 28)            // Left Leg
+        (11, 12), (11, 13), (13, 15), 
+        (12, 14), (14, 16),          
+        (11, 23), (12, 24), (23, 24),
+        (23, 25), (25, 27),           
+        (24, 26), (26, 28)            
     ]
+    
+
     
     var body: some View {
         Canvas { context, size in
@@ -47,11 +49,16 @@ struct LandmarkOverlayView: View {
         .drawingGroup()
     }
 
+
+
     private func mirror(_ x: Float, _ width: CGFloat) -> CGFloat {
+
         let px = CGFloat(x) * width
         return mirrorX ? (width - px) : px
     }
     
+
+
     private func colorForConnection(_ connection: (Int, Int)) -> Color {
         switch connection {
         case (11, 13), (13, 15):
@@ -129,6 +136,7 @@ struct InstructionOverlayView: View {
     private func mid(_ a: CGPoint, _ b: CGPoint) -> CGPoint {
         CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2)
     }
+
 
     private func drawArrow(context: inout GraphicsContext, from: CGPoint, to: CGPoint, color: Color) {
         var path = Path()

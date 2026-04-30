@@ -1,4 +1,4 @@
- //
+//
 //  CameraView.swift
 //  calisthenicsApp
 //
@@ -9,7 +9,6 @@ import SwiftUI
 import AVFoundation
 
 
-    // wrapping so live camera be be shown in swiftui
 
 struct CameraView: UIViewRepresentable {
 
@@ -34,8 +33,6 @@ struct CameraView: UIViewRepresentable {
             self.isMirrored = isMirrored
              }
 
-
-        //  appling th preview configs and mirroring settings to active camera session
         func configureConnection() {
             
             guard let connection = previewView?.previewLayer.connection 
@@ -69,7 +66,6 @@ struct CameraView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> PreviewView {
         let view = PreviewView()
-// attaching the camerra session to preview layer to render the live camera feed
 
         view.previewLayer.session = session
         view.previewLayer.videoGravity = .resizeAspectFill
@@ -86,7 +82,6 @@ struct CameraView: UIViewRepresentable {
         return view
     }
 
-    // updaing the view when ui changes 
 
     func updateUIView(_ uiView: PreviewView, context: Context) {
         

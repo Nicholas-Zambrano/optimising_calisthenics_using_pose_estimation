@@ -30,6 +30,7 @@ final class StudyLogger {
 
     func logRep(_ row: StudyRepRow) {
         rows.append(row)
+        
         print("[StudyLogger] rep=\(row.repNumber) participant=\(row.participantID) condition=\(row.condition) score=\(row.repScore) risk=\(row.riskLevel)")
     }
 
@@ -62,6 +63,7 @@ final class StudyLogger {
         return ([header] + dataRows).joined(separator: "\n")
     }
 
+
     func exportURL(participantID: String, condition: String) -> URL? {
         
         let csv = buildCSV()
@@ -78,6 +80,7 @@ final class StudyLogger {
             print("[StudyLogger] Exported \(rows.count) rows to \(filename)")
             return url
         } catch {
+
             print("[StudyLogger] Export failed: \(error)")
             return nil
         }

@@ -5,19 +5,16 @@ struct AnalyseView: View {
     @State private var showOffline = false
 
 
-    //  this is the main screen for the offline
     var body: some View {
         let palette = Theme.palette(choice: settings.themeChoice, darkMode: settings.darkMode)
         ZStack {
             palette.gradient.ignoresSafeArea()
 
-            // 
             VStack(alignment: .leading, spacing: 20) {
 
                 VStack(alignment: .leading, spacing: 6) {
 
 
-                    // title and description
                     Text("Video Analysis")
                          .font(.system(size:  30, weight: .heavy, design: .rounded))
 
@@ -55,7 +52,6 @@ struct AnalyseView: View {
     }
     
     
-    // reusable tap cards
     private func analyseCard(title: String, subtitle: String, icon: String, palette: ThemePalette) -> some View {
         
         HStack(spacing: 14) {

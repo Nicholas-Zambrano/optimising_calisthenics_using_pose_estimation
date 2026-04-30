@@ -38,6 +38,7 @@ final class OfflineAnalysisManager: ObservableObject
 
 
 
+
     @Published var progress: Double = 0
     @Published var status: String = "Idle"
     @Published var isRunning: Bool = false
@@ -225,6 +226,7 @@ final class OfflineAnalysisManager: ObservableObject
                                 self.logLines.append("t=\(tsMS)ms buffer=\(w)x\(h) reps=\(processor.repCount)")
                             }
                         }
+                        
                         let processed = self.processOnMain(processor: processor, landmarks: landmarks, timestampMS: tsMS)
                         if processed.depthProgress >= currentRepMaxDepth && processed.depthProgress > 0.5 {
                             currentRepMaxDepth = processed.depthProgress
@@ -234,6 +236,7 @@ final class OfflineAnalysisManager: ObservableObject
                                 landmarks: landmarks,
                                 overlayColors: processed.overlayColors
                             )
+
                         }
                         if processed.overlayColors.hasCritical
                             && processed.depthProgress > 0.08

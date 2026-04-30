@@ -2,12 +2,10 @@ import SwiftUI
 import Combine
 
 
-// main conainer for the seettings
-//  there is different options in the seetings for the user to change , such as feedback sensitivie, the focus, the reps etc
+
 
 final class AppSettings: ObservableObject {
 
-    // type of feedback 
     @Published var audioEnabled: Bool {
         didSet { UserDefaults.standard.set(audioEnabled, forKey: "audioEnabled") }
     }
@@ -44,7 +42,6 @@ final class AppSettings: ObservableObject {
     }
     
 
-    // restores the user presferneces frmo userdefailts when app is opened
     init() {
 
         if UserDefaults.standard.object(forKey: "audioEnabled") == nil {

@@ -34,6 +34,7 @@ struct HistoryView: View {
             .padding()
         }
     }
+
     
     private func historyCard(_ session: SessionRecord, palette: ThemePalette) -> some View 
     
@@ -71,6 +72,7 @@ struct HistoryView: View {
                     .foregroundColor(palette.textSecondary)
             }
         }
+
 
         .padding()
         .background(palette.card)

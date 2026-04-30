@@ -54,17 +54,18 @@ enum Theme {
         case .mint:
         
             return ThemePalette(
-                accent: Color(red: 0.25, green: 0.92, blue: 0.70),
+                accent:  Color(red: 0.25, green: 0.92, blue: 0.70),
                 accentAlt: Color(red: 0.10, green: 0.75, blue: 0.55),
                 bgTop: darkMode ? Color(red: 0.04, green: 0.08, blue: 0.08) : Color(red: 0.90, green: 0.98, blue: 0.96),
                 bgBottom: darkMode ? Color(red: 0.02, green: 0.04, blue: 0.05) : Color(red: 0.78, green: 0.94, blue: 0.90),
                 card: darkMode ? Color(white: 0.12) : Color.white.opacity(0.9),
                 cardAlt: darkMode ? Color(white: 0.16) : Color.white,
                 textPrimary: darkMode ? .white : Color(red: 0.06, green: 0.10, blue: 0.10),
-                textSecondary: darkMode ? Color.white.opacity(0.7) : Color(red: 0.24, green: 0.32, blue: 0.30)
+                textSecondary: darkMode ?   Color.white.opacity(0.7) : Color(red: 0.24, green: 0.32, blue: 0.30)
             )
         case .crimson:
             return ThemePalette(
+                
                 accent: Color(red: 0.95, green: 0.35, blue: 0.35),
                 accentAlt: Color(red: 1.00, green: 0.55, blue: 0.55),
                 bgTop: darkMode ? Color(red: 0.08, green: 0.04, blue: 0.06) : Color(red: 0.98, green: 0.92, blue: 0.92),

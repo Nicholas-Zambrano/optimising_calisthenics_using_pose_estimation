@@ -1,8 +1,6 @@
 import Foundation
 
 
-
-// this is for push up evaluation 
 struct PushUpConfig: Codable {
 
     let depthFrontThreshold:  Double
@@ -42,7 +40,7 @@ struct PushUpConfig: Codable {
 }
 
 
-// configuraion for squat evaluetion 
+
 struct SquatConfig: Codable {
 
     let depthThreshold: Double
@@ -53,7 +51,7 @@ struct SquatConfig: Codable {
     let feedbackRules: [FeedbackRule] }
 
 
-// this is the pull up evaluation 
+
 
 struct PullUpConfig: Codable {
 
@@ -65,7 +63,6 @@ struct PullUpConfig: Codable {
 
 }
 
-//  the severity rules
 enum RuleSeverity: String, Codable {
 
     case critical
@@ -75,7 +72,6 @@ enum RuleSeverity: String, Codable {
 
 
 
-//  this is user feedback , with specific metrics
 struct FeedbackRule: Codable {
 
     let id: String
@@ -88,7 +84,7 @@ struct FeedbackRule: Codable {
 
 }
 
-//  configureing the finate state machine
+
 struct PushUpFSMConfig: Codable {
 
     let stateOrder: [String]
@@ -97,13 +93,11 @@ struct PushUpFSMConfig: Codable {
     let minRepDurationSec: Double
 }
 
-//  this is the single sate 
 struct PushUpFSMState: Codable {
 
     let condition: String
 }
 
-// the transition between states
 struct PushUpFSMCounter: Codable {
     
     let from: String
@@ -112,7 +106,6 @@ struct PushUpFSMCounter: Codable {
 
 
 
-//  this containts the exercise definition and loads them 
 
 final class ExerciseDefinitionStore {
     static let shared = ExerciseDefinitionStore()
@@ -176,7 +169,6 @@ final class ExerciseDefinitionStore {
         )
     }
     
-    // implemented a helper to load the jon files and decode then,
     private static func load<T: Decodable>(_ name: String, as type: T.Type) -> T? {
         let url = Bundle.main.url(forResource: name, withExtension: "json", subdirectory: "ExerciseDefinitions")
             ?? Bundle.main.url(forResource: name, withExtension: "json")

@@ -3,8 +3,8 @@ import SwiftUI
 import MediaPipeTasksVision
 
 
-// this is the exercise evaluation which is used for the real time analysis
-// this containts the metrics, feedback and scoring etc
+
+
 
 struct EngineOutput {
     let repCount: Int
@@ -26,7 +26,6 @@ struct EngineOutput {
 }
 
 
-// contains teh real analysis results 
 final class ExerciseEngine {
 
 
@@ -36,7 +35,6 @@ final class ExerciseEngine {
     private let pullUpConfig: PullUpConfig
     
 
-    // this is the  rep tracking for pushups
     private var pushUpState: String = "UP"
     private var currentRepHasError = false
     private var lastTimestampMS: Int?
@@ -46,7 +44,6 @@ final class ExerciseEngine {
     private var belowDepthStartMS: Int?
 
 
-//  this is the rep timing and transition detection
     private var aboveLockoutStartMS: Int?
     private var inRep =  false
     private var criticalStreak =  0
@@ -54,8 +51,7 @@ final class ExerciseEngine {
     private var  isArmed = false
 
 
-//   this is the quality metrics and the range of motion 
-//  used 999 and 0 for tracking min and max values during reps
+
     private var lockoutHoldStartMS: Int?
     private var repMinElbowAngle: Double = 999
     private var repMaxElbowAngle: Double = 0
@@ -73,7 +69,6 @@ final class ExerciseEngine {
     private var repScores: [Int] = []
 
 
-    //  trhi is the error trakcing and feeedabck management
 
     private var issueCounts: [String: Int] = [:]
     private var lastRepFeedbackMessage: String = ""
@@ -85,12 +80,11 @@ final class ExerciseEngine {
     private var liveFeedbackLocked: Bool = false
     private var  lastRepMatchedRulesSquat: [FeedbackRule] =  []
 
-        //  debuggint to check visibility
+
     private var repArmsVisible: Bool = true
     private var debugEnabled: Bool = false
     private var lastMetricsTimestampMS: Int?
 
-    //  we done the singal smoothing
     private var smoothedElbowFlexion: Double?
     private var smoothedBackAngle: Double?
     private var smoothedElbowFlare: Double?
@@ -105,7 +99,7 @@ final class ExerciseEngine {
     private var fsmRepStartMS: Int?
     private var fsmCounted: Bool = false
 
-    //  this is teh calibration to analyse the users movement
+
     private var calibrationMinElbow: Double?
     private var calibrationMaxElbow: Double?
     private var calibrationRepCount = 0
@@ -116,33 +110,34 @@ final class ExerciseEngine {
     private var calibrationElbowAngleDiff: Double?
     private var calibrationDepthProgress: Double?
 
- // this is the squat strcking
+
     private var squatState: String = "UP"
     private var squatRepMinAngle: Double = 999
     private var squatRepStartMS: Int?
     private var squatRepStartedSideView: Bool = false
-    private var squatRepMaxKneeValgus: Double = 0
-    private var squatRepMaxForwardLean: Double = 0
-    private var squatRepMaxKneeForwardTravel: Double = 0
+    private var squatRepMaxKneeValgus:  Double = 0
+    private var squatRepMaxForwardLean:  Double = 0
+    private var squatRepMaxKneeForwardTravel: Double =  0
     private var squatCalibratedMinAngle: Double?
     private var squatCalibrationRepCount = 0
     private var squatCalibrationMinAngleSum: Double = 0
     private var squatAngleWindow: [Double] = []
-    private var squatValgusWindow: [Double] = []
+    private var squatValgusWindow: [Double] =  []
     private var squatLeanWindow: [Double] = []
-    private var squatKneeTravelWindow: [Double] = []
-    private let squatSmoothingWindow = 3
-    private var lastSquatLogMS: Int = 0
+    private var squatKneeTravelWindow:   [Double] = []
+    private let squatSmoothingWindow =  3
+    private var lastSquatLogMS: Int =  0
     private var lastPushUpLogMS: Int = 0
     private var squatCalibratedLeanBaseline: Double?
     private var squatCalibratedKneeFwdBaseline: Double?
+
+
     private var squatCalibLeanSum: Double = 0
     private var squatCalibKneeFwdSum: Double = 0
     private var squatRepLeanAtMinAngle: Double = 0
     private var squatRepDownPhasePeakLean: Double = 0
 
 
-//  initial pull up tracking
     private var pullUpState: String = "DOWN"
     private var pullUpRepMinAngle: Double = 999
     private var pullUpRepStartMS: Int?
@@ -154,9 +149,9 @@ final class ExerciseEngine {
     private var pullUpRepMaxHeadOffset: Double = 0
     private var pullUpRepMaxElbowFlare: Double = 0
     
-    //  this is the evalution results 
     private(set) var repCount: Int = 0
     private(set) var cleanReps: Int = 0
+
     private(set) var overallScore: Int = 0
     private(set) var depthProgress: Double = 0
     private(set) var overlayColors: OverlayColors = .neutral
@@ -179,7 +174,6 @@ final class ExerciseEngine {
 
         
 
-     // setting up the engiene with evaluator and the exercise settings  
     init(evaluator: BiometricEvaluator, pushUpConfig: PushUpConfig, squatConfig: SquatConfig, pullUpConfig: PullUpConfig) {
         
         self.evaluator = evaluator
@@ -264,11 +258,9 @@ final class ExerciseEngine {
 
 
 
-    //  this updates the push up and gives back the real the real time metrics
     func updatePushUp
     (
     
-        //  updading the push up state
         metrics: PushUpMetrics,
         frontMetrics: FrontViewMetrics,
         elbowAngleDiff: Double,
@@ -288,7 +280,7 @@ final class ExerciseEngine {
         self.debugEnabled = enableDebug
 
 
-        //  determins the posture evlaution and we are smoothing the metrics
+
         let ruleMode: PushUpPostureMode = (feedbackFocus == .armsOnly ? .front : postureMode)
 
         let (smoothedMetrics, smoothedFront, smoothedElbowDiff) = smoothPushUpMetrics(
@@ -354,26 +346,8 @@ final class ExerciseEngine {
         }
         
 
-        // //  just logging the push up for debugging 
-        // if (timestampMS - lastPushUpLogMS) >= 500 {
-
-        //     lastPushUpLogMS = timestampMS
-        //     print(String(
-        //         format: "[PushUp:frame] mode=%@ state=%@ elbow=%.1f back=%.1f depth=%.2f flare=%.3f hipDrop=%.3f inRep=%d",
-        //         "\(postureMode)",
-        //         fsmCurrentState ?? "nil",
-        //         smoothedMetrics.elbowFlexion,
-        //         smoothedMetrics.backAngle,
-        //         depthProgress,
-        //         smoothedFront.elbowFlareRatio,
-        //         smoothedFront.hipDropRatio,
-        //         inRep ? 1 : 0
-        //     ))
-        // }
 
 
-
-//  debuggin for push up metrics
 
         if enableDebug {
             let hipBase = calibrationHipDrop ?? pushUpConfig.hipBaseDefault
@@ -403,7 +377,7 @@ final class ExerciseEngine {
         }
 
 
-        // choosing between rep completion and live correction message
+
         if repCompletedMessage != nil 
         {
 
@@ -419,7 +393,6 @@ final class ExerciseEngine {
             )
         }
 
-//  updaging the calibration progeress
         if calibrationRepCount < calibrationReps && secondaryHint.isEmpty {
 
             secondaryHint = "Calibrating: \(calibrationRepCount)/\(calibrationReps)"
@@ -449,7 +422,7 @@ final class ExerciseEngine {
         )
     }
 
-// processing the squat input landmarks  and figuring out the view mode
+
 
 
     func updateSquat(
@@ -497,7 +470,6 @@ final class ExerciseEngine {
         let bodyVisible: Bool
 
 
-        // determing body visibility
         if sideView {
             let leftVis = min(leftHipVis, leftKneeVis, leftAnkleVis)
             let rightVis = min(rightHipVis, rightKneeVis, rightAnkleVis)
@@ -538,32 +510,10 @@ final class ExerciseEngine {
         let kneeForwardTravel = smoothValue(&squatKneeTravelWindow, rawKneeForwardTravel, maxCount: squatSmoothingWindow)
 
 
-        // if (timestampMS - lastSquatLogMS) >= 500 {
-        //     lastSquatLogMS = timestampMS
-        //     let lKVis = leftKnee.visibility?.floatValue ?? 0
-        //     let rKVis = rightKnee.visibility?.floatValue ?? 0
-        //     let lAVis = leftAnkle.visibility?.floatValue ?? 0
-        //     let rAVis = rightAnkle.visibility?.floatValue ?? 0
-        //     print(String(
-        //         format: "[Squat:frame] view=%@ state=%@ angle=%.1f depth=%.2f valgus=%.3f lean=%.3f kneeFwd=%.3f | lKnee=(%.3f,%.3f,vis=%.2f) rKnee=(%.3f,%.3f,vis=%.2f) | lAnkle=(%.3f,%.3f,vis=%.2f) rAnkle=(%.3f,%.3f,vis=%.2f) | lHip=(%.3f,%.3f) rHip=(%.3f,%.3f) | lShoulder=(%.3f,%.3f) hipW=%.3f",
-        //         sideView ? "side" : "front",
-        //         squatState,
-        //         angle, depthProgress,
-        //         kneeValgus, forwardLean, kneeForwardTravel,
-        //         Double(leftKnee.x), Double(leftKnee.y), Double(lKVis),
-        //         Double(rightKnee.x), Double(rightKnee.y), Double(rKVis),
-        //         Double(leftAnkle.x), Double(leftAnkle.y), Double(lAVis),
-        //         Double(rightAnkle.x), Double(rightAnkle.y), Double(rAVis),
-        //         Double(leftHip.x), Double(leftHip.y),
-        //         Double(rightHip.x), Double(rightHip.y),
-        //         Double(leftShoulder.x), Double(leftShoulder.y),
-        //         hipWidth
-        //     ))
-        // }
 
 
 
-        // tracking the peak squat form metruics during rep
+
 
         if squatRepStartMS != nil {
             let kneeVisL = leftKnee.visibility?.floatValue ?? 0
@@ -595,7 +545,7 @@ final class ExerciseEngine {
         }
 
 
-        // this works on the squat state transition 
+
         if squatState == "UP" {
 
             if squatRepStartMS == nil {
@@ -623,7 +573,7 @@ final class ExerciseEngine {
         } 
 
 
-        // handles teh squat rep cpompeltion , with the scoring, rule evlaution , calibrationr and state reset
+
         else {
             if angle >= lockoutAngle {
 
@@ -658,26 +608,30 @@ final class ExerciseEngine {
                 ]
 
 
-                // evaluting the rules and generating score, feedback and rep summary 
                 matchedForScore =  evaluateRules(values: repValues, postureMode: squatPostureMode, exerciseTag: "squat", rules: squatConfig.feedbackRules)
                 
                 
                 lastRepMatchedRulesSquat = matchedForScore
                 let repScore = scoreForRules(matchedForScore)
-                lastRepScore = repScore
+
+                lastRepScore =  repScore
                 lastRepAllMessages = dedupeRules(matchedForScore.sorted { severityRank($0.severity) > severityRank($1.severity) }).map { ($0.message, $0.severity) }
                 lastRepDurationSec = durationSec
-                lastRepDepthProgress = repDepthProgress
+                lastRepDepthProgress =   repDepthProgress
                 lastRepRuleIDs = Set(matchedForScore.map { $0.id })
                 repScores.append(repScore)
-                overallScore = repScores.isEmpty ? 0 : Int(Double(repScores.reduce(0, +)) / Double(repScores.count))
+                overallScore = repScores.isEmpty  ? 0 : Int(Double(repScores.reduce(0, +)) / Double(repScores.count))
 
-                if repScore >= 85 { cleanReps += 1 }
+                if repScore >= 85 { 
+                    cleanReps += 1 
+                    }
+
                 repCount += 1
                 let msg = messageForRules(matchedForScore)
                 let sec = secondaryMessageForRules(matchedForScore)
                 let repRisk: RiskLevel = matchedForScore.contains(where: { $0.severity == .critical }) ? .critical
                     : (matchedForScore.contains(where: { $0.severity == .important }) ? .medium : .low)
+
                 
                 updateFeedback(message: msg, secondary: sec, risk: repRisk, force: true)
                 speakMessage = messageForAudio(matchedForScore)
@@ -694,25 +648,7 @@ final class ExerciseEngine {
                 let ruleIds = matchedForScore.map { $0.id }.joined(separator: ",")
 
 
-                //  // printing squat analysiss
-
-
-                // print(String(
-                //     format: "[Squat:rep] #%d view=%@ minAngle=%.1f depthQ=%.2f depthProg=%.2f maxValgus=%.3f maxLean=%.3f maxKneeFwd=%.3f pelvicTilt=%.3f tempo=%.2fs score=%d risk=%@ rules=[%@]",
-                //     repCount,
-                //     squatRepStartedSideView ? "side" : "front",
-                //     squatRepMinAngle,
-                //     depthQuality,
-                //     repDepthProgress,
-                //     squatRepMaxKneeValgus,
-                //     squatRepMaxForwardLean,
-                //     squatRepMaxKneeForwardTravel,
-                //     pelvicTilt,
-                //     durationSec,
-                //     repScore,
-                //     "\(repRisk)",
-                //     ruleIds.isEmpty ? "none" : ruleIds
-                // ))
+        
 
 
                 if debugEnabled {
@@ -732,12 +668,13 @@ final class ExerciseEngine {
                     )
                 }
 
-            //  this is the squat calibraion 
                 if squatCalibrationRepCount < 3 {
+
+
                     squatCalibrationRepCount += 1
                     squatCalibrationMinAngleSum += squatRepMinAngle
                     squatCalibLeanSum += squatRepMaxForwardLean
-                    squatCalibKneeFwdSum += squatRepMaxKneeForwardTravel
+                    squatCalibKneeFwdSum +=  squatRepMaxKneeForwardTravel
 
 
                     if squatCalibrationRepCount == 3 
@@ -755,24 +692,25 @@ final class ExerciseEngine {
                 }
 
 
-                //  once reached we reset the state for next rep 
-                squatState = "UP"
+                squatState =  "UP"
                 squatRepMinAngle = 999
-                squatRepStartMS = nil
+
+                squatRepStartMS =  nil
                 squatRepStartedSideView = false
                 squatRepMaxKneeValgus = 0
                 squatRepMaxForwardLean = 0
                 squatRepLeanAtMinAngle = 0
                 squatRepDownPhasePeakLean = 0
 
-                //  session completion check 
+
                 if repCount >= targetReps {
                     isSessionComplete = true
                     sessionSummary = buildSessionSummary()
                 }
             } 
 
-            //  this is the live feedback 
+
+
             else if shouldUpdateLiveFeedback(message: "Drive up")
              {
 
@@ -809,7 +747,10 @@ final class ExerciseEngine {
             let label = topLiveRule.severity == .critical ? "CRITICAL" : "IMPORTANT"
             updateFeedback(message: "\(label): \(topLiveRule.message)", secondary: "", risk: topLiveRule.severity == .critical ? .critical : .medium, force: true)
         }
-        return EngineOutput(
+
+
+        return EngineOutput
+        (
             repCount: repCount,
             cleanReps: cleanReps,
             overallScore: overallScore,
@@ -828,13 +769,14 @@ final class ExerciseEngine {
     }
 
 
-// initial computing for pull up and gettinbg the landmarks
+
     func updatePullUp(landmarks: [NormalizedLandmark],
                       timestampMS: Int) -> EngineOutput {
 
 
         lastTimestampMS = timestampMS
         let leftShoulder = landmarks[11]
+
         let rightShoulder = landmarks[12]
         let leftElbow = landmarks[13]
         let rightElbow = landmarks[14]
@@ -849,15 +791,15 @@ final class ExerciseEngine {
         let leftShoulderVis =leftShoulder.visibility?.floatValue ?? 0
         
         let rightShoulderVis = rightShoulder.visibility?.floatValue ?? 0
-        let leftElbowVis = leftElbow.visibility?.floatValue ?? 0
-        let rightElbowVis = rightElbow.visibility?.floatValue ?? 0
+        let leftElbowVis =  leftElbow.visibility?.floatValue ?? 0
+        let rightElbowVis =  rightElbow.visibility?.floatValue ?? 0
         let leftWristVis = leftWrist.visibility?.floatValue ?? 0
         let rightWristVis = rightWrist.visibility?.floatValue ?? 0
         let bodyVisible = min(leftShoulderVis, rightShoulderVis, leftElbowVis, rightElbowVis, leftWristVis, rightWristVis) >= 0.4
 
         let leftElbowAngle = evaluator.calculateAngle(p1: leftShoulder, p2: leftElbow, p3: leftWrist)
         let rightElbowAngle = evaluator.calculateAngle(p1: rightShoulder, p2: rightElbow, p3: rightWrist)
-        let angle = (leftElbowAngle + rightElbowAngle) / 2.0
+        let angle =   (leftElbowAngle + rightElbowAngle) / 2.0
        
        
         depthProgress = depthProgressFor(currentAngle: angle, minAngle: pullUpConfig.chinOverBarAngle, maxAngle: pullUpConfig.bottomAngle)
@@ -881,6 +823,8 @@ final class ExerciseEngine {
         pullUpRepMaxElbowAngle = max(pullUpRepMaxElbowAngle, maxElbowAngle)
 
         let leftEarVis = leftEar.visibility?.floatValue ?? 0
+
+
         let rightEarVis = rightEar.visibility?.floatValue ?? 0
         let earVis = min(leftEarVis, rightEarVis)
         let leftGap = max(0.0, Double(leftShoulder.y - leftEar.y))
@@ -895,7 +839,8 @@ final class ExerciseEngine {
         let elbowFlare = max(leftElbowFlare, rightElbowFlare)
 
 
-        // Updating the min and max metric for pull ups
+
+
         if pullUpRepStartMS != nil {
             pullUpRepMaxShoulderAsym = max(pullUpRepMaxShoulderAsym, shoulderAsym)
             pullUpRepMaxElbowDiff = max(pullUpRepMaxElbowDiff, elbowAngleDiff)
@@ -1044,7 +989,7 @@ final class ExerciseEngine {
     private var repCompletedMessage: String?
     
 
-    // reseting metrics after each rep
+
     private func resetRepMetrics() {
 
 
@@ -1071,7 +1016,7 @@ final class ExerciseEngine {
     }
 
 
-//  returnging the coorect color overlay which is based on risk lelve
+
     private func colorsForRisk(_ risk: RiskLevel, arms: Bool, legs: Bool) -> OverlayColors {
         let color: Color
         switch risk {
@@ -1090,7 +1035,7 @@ final class ExerciseEngine {
             rightLeg: legs ? color : .white.opacity(0.6)
         )
     }
-// this is teh clor overlay for squats
+
     private func colorsForSquat(rules: [FeedbackRule]) -> OverlayColors {
 
         guard !rules.isEmpty else {
@@ -1106,7 +1051,6 @@ final class ExerciseEngine {
         }
 
 
-//  this si the logic to decude which feedabck to sort based on serverity
         let sorted = rules.sorted { severityRank($0.severity) > severityRank($1.severity) }
         let primary = sorted[0]
         let color: Color
@@ -1140,7 +1084,7 @@ final class ExerciseEngine {
     }
     
 
-    // this the exxponanential moving average 
+
     private func emaFilter(previous: Double?, value: Double, dtSeconds: Double, tau: Double) -> Double 
     {
         guard let previous = previous else { 
@@ -1153,7 +1097,7 @@ final class ExerciseEngine {
     }
 
 
-        //  retunring the average of vals in window
+
     private func smoothValue(_ window: inout [Double], _ value: Double, maxCount: Int) -> Double {
         window.append(value)
         if window.count > maxCount {
@@ -1173,7 +1117,7 @@ final class ExerciseEngine {
                                      timestampMS: Int) -> (PushUpMetrics, FrontViewMetrics, Double) {
         let dtSeconds: Double
 
-        // finding difference in time from last metrics time
+
         if let last = lastMetricsTimestampMS {
             dtSeconds = max(0.001, Double(timestampMS - last) / 1000.0)
         }
@@ -1186,7 +1130,8 @@ final class ExerciseEngine {
         let tauFast = 0.10
         let tauSlow = 0.18
 
-// smoothjing
+
+
         smoothedElbowFlexion = emaFilter(previous: smoothedElbowFlexion, value: metrics.elbowFlexion, dtSeconds: dtSeconds, tau: tauFast)
         smoothedBackAngle = emaFilter(previous: smoothedBackAngle, value: metrics.backAngle, dtSeconds: dtSeconds, tau: tauFast)
         smoothedElbowFlare = emaFilter(previous: smoothedElbowFlare, value: metrics.elbowFlare, dtSeconds: dtSeconds, tau: tauFast)
@@ -1217,7 +1162,7 @@ final class ExerciseEngine {
         )
 
 
-        // retunsing the smoothed metrics and elbow angle difference
+
 
         return (smoothedMetrics, smoothedFront, smoothedElbowAngleDiff ?? elbowAngleDiff)
     }
@@ -1233,21 +1178,28 @@ final class ExerciseEngine {
 
         repMaxElbowFlare = max(repMaxElbowFlare, metrics.elbowFlare)
         repMaxHipDropRatio = max(repMaxHipDropRatio, frontMetrics.hipDropRatio)
+
         repMaxHipRiseRatio = max(repMaxHipRiseRatio, frontMetrics.hipRiseRatio)
-        repMaxElbowFlareRatio = max(repMaxElbowFlareRatio, frontMetrics.elbowFlareRatio)
-        repMaxShoulderAsym = max(repMaxShoulderAsym, frontMetrics.shoulderAsym)
-        repMaxHipAsym = max(repMaxHipAsym, frontMetrics.hipAsym)
+        repMaxElbowFlareRatio = max (repMaxElbowFlareRatio, frontMetrics.elbowFlareRatio)
+        repMaxShoulderAsym = max (repMaxShoulderAsym, frontMetrics.shoulderAsym)
+        repMaxHipAsym = max (repMaxHipAsym, frontMetrics.hipAsym)
         repMaxElbowAngleDiff = max(repMaxElbowAngleDiff, elbowAngleDiff)
 
 
-        if !frontMetrics.hipsVisible { repHipsVisible = false }
-        if !frontMetrics.armsVisible { repArmsVisible = false }
+        if !frontMetrics.hipsVisible { 
+            repHipsVisible = false 
+            }
+        if !frontMetrics.armsVisible { 
+            repArmsVisible = false
+             }
     }
+
     
 
-    //  hadling the single push up repetition 
     private func handlePushUpRep(elbowAngleRaw: Double, timestampMS: Int, postureMode: PushUpPostureMode) {
-        if isSessionComplete { return }
+        if isSessionComplete { 
+            return
+             }
         
         let dtSeconds: Double
         if let last = lastTimestampMS {
@@ -1265,10 +1217,13 @@ final class ExerciseEngine {
         let velocity: Double
         if let lastAngle = lastElbowAngle {
             velocity = (smoothedAngle - lastAngle) / dtSeconds
-        } else {
-            velocity = 0.0
+        } 
+        else {
+
+             velocity = 0.0
         }
-        lastElbowAngle = smoothedAngle
+
+         lastElbowAngle = smoothedAngle
         elbowVelocityEMA = emaFilter(previous: elbowVelocityEMA, value: velocity, dtSeconds: dtSeconds, tau: 0.12)
         let v = elbowVelocityEMA ?? 0.0
         
@@ -1276,6 +1231,8 @@ final class ExerciseEngine {
             handlePushUpFSM(smoothedAngle: smoothedAngle, velocity: v, timestampMS: timestampMS, fsm: fsm, postureMode: postureMode)
             return
         }
+
+
 
         let depthAngle = (postureMode == .front) ? pushUpConfig.depthFrontThreshold : pushUpConfig.depthSideThreshold
         let lockoutAngle = (postureMode == .front) ? pushUpConfig.lockoutFrontThreshold : pushUpConfig.lockoutSideThreshold
@@ -1294,12 +1251,14 @@ final class ExerciseEngine {
                     isArmed = true
                 }
             } else {
+
                 lockoutHoldStartMS = nil
             }
             
             if smoothedAngle < depthAngle && v < minDownVelocity {
                 if belowDepthStartMS == nil { belowDepthStartMS = timestampMS }
                 if let start = belowDepthStartMS, (timestampMS - start) >= dwellMS {
+                    
                     if isArmed {
                         pushUpState = "DOWN"
                         aboveLockoutStartMS = nil
@@ -1309,10 +1268,13 @@ final class ExerciseEngine {
                         repStartMS = timestampMS
                     }
                 }
-            } else {
+            } else
+            
+            {
                 belowDepthStartMS = nil
             }
         } else {
+
             if smoothedAngle > lockoutAngle && v > minUpVelocity {
                 if aboveLockoutStartMS == nil { aboveLockoutStartMS = timestampMS }
                 if let start = aboveLockoutStartMS, (timestampMS - start) >= dwellMS {
@@ -1324,11 +1286,13 @@ final class ExerciseEngine {
                     belowDepthStartMS = nil
                 }
             } else {
+
                 aboveLockoutStartMS = nil
             }
         }
         
         if inRep {
+
             if currentRisk == .critical {
                 criticalStreak += 1
                 if criticalStreak >= criticalStreakThreshold {
@@ -1348,7 +1312,8 @@ final class ExerciseEngine {
         }
     }   
 
-    // the finite satae machine for puhs up
+
+
 
     private func handlePushUpFSM(
         
@@ -1356,6 +1321,7 @@ final class ExerciseEngine {
         smoothedAngle: Double,
         velocity: Double,
         timestampMS: Int,
+
         fsm: PushUpFSMConfig,
         postureMode: PushUpPostureMode) {
         if fsmCurrentState == nil {
@@ -1421,6 +1387,8 @@ final class ExerciseEngine {
             if part.isEmpty { 
                 continue 
                 }
+
+
             if !evaluateClause(part, values: values) { 
                 return false 
                 }
@@ -1431,12 +1399,15 @@ final class ExerciseEngine {
     private func evaluateClause(_ clause: String, values: [String: Double]) -> Bool {
         let ops = [">=", "<=", ">", "<"]
         for op in ops {
+
             if let range = clause.range(of: op) {
-                let left = clause[..<range.lowerBound].trimmingCharacters(in: .whitespaces)
+                
+                let left = clause[..<range.lowerBound].trimmingCharacters(in  : .whitespaces)
                 let right = clause[range.upperBound...].trimmingCharacters(in: .whitespaces)
                 guard let lhs = values[String(left)],
                       let rhs = Double(right) else { return false }
                 switch op {
+
                 case ">=": return lhs >= rhs
                 case "<=": return lhs <= rhs
                 case ">": return lhs > rhs
@@ -1446,10 +1417,12 @@ final class ExerciseEngine {
             }
         }
         return false
+
     }
     
     private func finaliseRep(postureMode: PushUpPostureMode, timestampMS: Int) {
-        repEndMS = timestampMS
+
+        repEndMS =  timestampMS
         liveFeedbackLocked = false
         let durationMS = (repStartMS != nil && repEndMS != nil) ? max(1, (repEndMS! - repStartMS!)) : 1
         let durationSec = Double(durationMS) / 1000.0
@@ -1460,6 +1433,7 @@ final class ExerciseEngine {
         lastRepTooFast = durationSec < 0.3
 
         let useHipMetrics = repHipsVisible && feedbackFocus == .fullBody && !isPortraitMode
+
         let repValues: [String: Double] = [
             "hipDropRatio": useHipMetrics ? repMaxHipDropRatio : 0.0,
             "hipRiseRatio": useHipMetrics ? repMaxHipRiseRatio : 0.0,
@@ -1475,8 +1449,10 @@ final class ExerciseEngine {
             "elbowFlare": repMaxElbowFlare
         ]
 
+
         let ruleMode: PushUpPostureMode = (feedbackFocus == .armsOnly ? .front : postureMode)
         let matchedRules = evaluateRules(values: repValues, postureMode: ruleMode, exerciseTag: "pushup", rules: pushUpConfig.feedbackRules)
+        
         let repScore = scoreForRules(matchedRules)
         lastRepAllMessages = dedupeRules(matchedRules.sorted { severityRank($0.severity) > severityRank($1.severity) }).map { ($0.message, $0.severity) }
         lastRepDurationSec = durationSec
@@ -1485,6 +1461,7 @@ final class ExerciseEngine {
         let ids = matchedRules.map { $0.id }.joined(separator: ",")
         print(String(format: "[PushUpRep] mode=%@ focus=%@ backAngle=%.1f elbow=%.1f matched=[%@] score=%d",
                      "\(ruleMode)", "\(feedbackFocus)", repMinBackAngle, repMinElbowAngle, ids, repScore))
+        
         if debugEnabled {
             if matchedRules.isEmpty {
                 print("[PushUpRep] rules.count=\(pushUpConfig.feedbackRules.count) mode=\(ruleMode) focus=\(feedbackFocus)")
@@ -1513,10 +1490,12 @@ final class ExerciseEngine {
         let secondary = secondaryMessageForRules(matchedRules)
         let repRisk: RiskLevel = matchedRules.contains(where: { $0.severity == RuleSeverity.critical }) ? .critical :
             (matchedRules.contains(where: { $0.severity == RuleSeverity.important }) ? .medium : .low)
+
         updateFeedback(message: message, secondary: secondary, risk: repRisk, force: true)
 
         let audioMessage = messageForAudio(matchedRules)
         repCompletedMessage = "Rep \(repCount). \(audioMessage)"
+
 
         repMinBackAngle = 999
 
@@ -1526,14 +1505,15 @@ final class ExerciseEngine {
         }
         
         if calibrationRepCount < calibrationReps {
-            calibrationMinElbow = min(calibrationMinElbow ?? repMinElbowAngle, repMinElbowAngle)
+            calibrationMinElbow = min(calibrationMinElbow  ?? repMinElbowAngle, repMinElbowAngle)
             calibrationMaxElbow = max(calibrationMaxElbow ?? repMaxElbowAngle, repMaxElbowAngle)
             calibrationHipDrop = max(calibrationHipDrop ?? repMaxHipDropRatio, repMaxHipDropRatio)
             calibrationElbowFlareRatio = max(calibrationElbowFlareRatio ?? repMaxElbowFlareRatio, repMaxElbowFlareRatio)
             calibrationShoulderAsym = max(calibrationShoulderAsym ?? repMaxShoulderAsym, repMaxShoulderAsym)
-            calibrationElbowAngleDiff = max(calibrationElbowAngleDiff ?? repMaxElbowAngleDiff, repMaxElbowAngleDiff)
-            calibrationDepthProgress = max(calibrationDepthProgress ?? repDepthProgress, repDepthProgress)
-            calibrationRepCount += 1
+            calibrationElbowAngleDiff = max(calibrationElbowAngleDiff  ?? repMaxElbowAngleDiff, repMaxElbowAngleDiff)
+            calibrationDepthProgress = max(calibrationDepthProgress  ?? repDepthProgress, repDepthProgress)
+            calibrationRepCount +=  1
+
 
             if calibrationRepCount == calibrationReps {
                 print(String(format: "[Calibration] elbowMin=%.1f elbowMax=%.1f hip=%.3f flare=%.3f shoulderAsym=%.3f elbowDiff=%.1f depth=%.2f",
@@ -1549,71 +1529,102 @@ final class ExerciseEngine {
     }
     
     private func calculateOverallScore() {
-        guard repCount > 0 else { return }
+
+        guard repCount > 0 
+        else { 
+            return
+             }
         overallScore = repScores.reduce(0, +) / max(repScores.count, 1)
     }
+
+
 
     private func buildSessionSummary() -> SessionSummary {
         return SessionSummary(
             totalReps: repCount,
             averageScore: overallScore,
             cleanReps: cleanReps,
-            bestRep: repScores.max() ?? 0,
+            bestRep: repScores.max()  ?? 0,
             worstRep: repScores.min() ?? 0,
-            mostCommonIssueMessage: issueCounts.max(by: { $0.value < $1.value })?.key
+            mostCommonIssueMessage: issueCounts.max(by:  { $0.value < $1.value })?.key
         )
     }
 
     private func scoreForRules(_ rules: [FeedbackRule]) -> Int {
+
         var score = 100
         for rule in rules {
             switch rule.severity {
-            case .critical: score -= 35
+            case .critical:  score -= 35
             case .important: score -= 15
-            case .minor: score -= 5
+            case .minor: score -=  5
             }
         }
         return max(0, min(100, score))
+
     }
+
+
+
 
     private func messageForRules(_ rules: [FeedbackRule]) -> String {
         if rules.isEmpty { return "GOOD: Form is clean" }
         let sorted = rules.sorted { severityRank($0.severity) > severityRank($1.severity) }
         let unique = dedupeRules(sorted)
+
         let primary = unique[0]
-        return "\(label(for: primary.severity)): \(primary.message)"
+       
+       return "\(label(for: primary.severity)): \(primary.message)"
     }
 
     private func messageForAudio(_ rules: [FeedbackRule]) -> String {
-        guard !rules.isEmpty else { return "GOOD: Form is clean" }
+
+        guard !rules.isEmpty 
+        else 
+        { 
+            return "GOOD: Form is clean"
+         }
+
+
         let sorted = rules.sorted { severityRank($0.severity) > severityRank($1.severity) }
         if let critical = sorted.first(where: { $0.severity == .critical }) {
             return "\(label(for: critical.severity)): \(critical.message)"
         }
+
+
         if let important = sorted.first(where: { $0.severity == .important }) {
             return "\(label(for: important.severity)): \(important.message)"
         }
         if let minor = sorted.first(where: { $0.severity == .minor }) {
             return "\(label(for: minor.severity)): \(minor.message)"
         }
-        return "GOOD: Form is clean"
+
+        return  "GOOD: Form is clean"
     }
 
     private func secondaryMessageForRules(_ rules: [FeedbackRule]) -> String {
-        if rules.count > 1 {
+        if rules.count > 1 
+        {
+
             let sorted = rules.sorted { severityRank($0.severity) > severityRank($1.severity) }
             let unique = dedupeRules(sorted)
             if unique.count > 1 {
+
                 return "Also: \(unique[1].message)"
             }
         }
         return ""
+
     }
 
     private func dedupeRules(_ rules: [FeedbackRule]) -> [FeedbackRule] {
+
         var seen = Set<String>()
+
+
         var result: [FeedbackRule] = []
         for rule in rules {
+
             if seen.contains(rule.message) { continue }
             seen.insert(rule.message)
             result.append(rule)
@@ -1624,16 +1635,19 @@ final class ExerciseEngine {
     private func updateFeedback(message: String,
                                 secondary: String = "",
                                 risk: RiskLevel,
-                                force: Bool = false) {
+                                force: Bool = false) 
+                                {
         let now = Int64(lastTimestampMS ?? 0)
+
         if !force && message == lastFeedbackMessage && (now - lastFeedbackUpdateMS) < 800 {
             return
         }
-        feedbackMessage = message
+
+        feedbackMessage =  message
         secondaryHint = secondary
         currentRisk = risk
         lastFeedbackMessage = message
-        lastFeedbackUpdateMS = now
+        lastFeedbackUpdateMS =  now
     }
 
     private func shouldUpdateLiveFeedback(message: String) -> Bool {
@@ -1643,10 +1657,13 @@ final class ExerciseEngine {
             pendingFeedbackStartMS = 0
             return true
         }
-        if message == pendingFeedbackMessage {
+
+        if message == pendingFeedbackMessage
+        
+         {
             if (now - pendingFeedbackStartMS) >= 450 {
                 pendingFeedbackMessage = ""
-                pendingFeedbackStartMS = 0
+                pendingFeedbackStartMS =  0
                 return true
             }
             return false
@@ -1660,21 +1677,25 @@ final class ExerciseEngine {
     private func applyRuleBasedFeedback(frontMetrics: FrontViewMetrics,
                                         elbowAngleDiff: Double,
                                         postureMode: PushUpPostureMode) {
-        guard !pushUpConfig.feedbackRules.isEmpty else { return }
+        guard !pushUpConfig.feedbackRules.isEmpty 
+        else {
+             return }
 
         let useHipMetrics = frontMetrics.hipsVisible && feedbackFocus == .fullBody && !isPortraitMode
+
         let values: [String: Double] = [
-            "hipDropRatio": useHipMetrics ? frontMetrics.hipDropRatio : 0.0,
+
+            "hipDropRatio": useHipMetrics  ? frontMetrics.hipDropRatio : 0.0,
             "hipRiseRatio": useHipMetrics ? frontMetrics.hipRiseRatio : 0.0,
             "elbowFlareRatio": frontMetrics.elbowFlareRatio,
             "shoulderAsym": frontMetrics.shoulderAsym,
-            "hipAsym": useHipMetrics ? frontMetrics.hipAsym : 0.0,
-            "elbowAngleDiff": elbowAngleDiff,
+            "hipAsym": useHipMetrics  ? frontMetrics.hipAsym : 0.0,
+            "elbowAngleDiff": elbowAngleDiff ,
             "depthProgress": depthProgress,
             "hipsVisible": frontMetrics.hipsVisible ? 1.0 : 0.0,
-            "armsVisible": frontMetrics.armsVisible ? 1.0 : 0.0,
+            "armsVisible": frontMetrics.armsVisible ? 1.0 : 0.0 ,
             "tempoFast": lastRepTooFast ? 1.0 : 0.0,
-            "backAngle": repMinBackAngle < 999 ? repMinBackAngle : 180.0,
+            "backAngle": repMinBackAngle <  999 ? repMinBackAngle : 180.0,
             "elbowFlare": repMaxElbowFlare
         ]
 
@@ -1682,6 +1703,7 @@ final class ExerciseEngine {
 
         if matched.isEmpty {
             if inRep {
+
                 let hint = depthProgress < 0.7 ? "Lower down for full depth" : "Hold steady"
                 if !liveFeedbackLocked && shouldUpdateLiveFeedback(message: hint) {
                     updateFeedback(message: hint, secondary: "", risk: .low)
@@ -1691,16 +1713,21 @@ final class ExerciseEngine {
             return
         }
 
+
+
         let message = messageForRules(matched)
-        let secondary = secondaryMessageForRules(matched)
+        let  secondary = secondaryMessageForRules(matched)
+
+
         if let primary = matched.sorted(by: { severityRank($0.severity) > severityRank($1.severity) }).first {
             if inRep && primary.severity == .minor {
                 if liveFeedbackLocked { return }
             }
             if shouldUpdateLiveFeedback(message: message) {
+
                 updateFeedback(message: message, secondary: secondary, risk: riskLevel(for: primary.severity))
                 if inRep && primary.severity == .minor {
-                    liveFeedbackLocked = true
+                     liveFeedbackLocked = true
                 }
             }
         }
@@ -1709,12 +1736,18 @@ final class ExerciseEngine {
     private func evaluateRules(values: [String: Double],
                                postureMode: PushUpPostureMode,
                                exerciseTag: String,
-                               rules: [FeedbackRule]) -> [FeedbackRule] {
+                               rules: [FeedbackRule]) ->  [FeedbackRule] {
 
 
         let hasCriticalOrImportant = rules.contains { rule in
-            guard let value = values[rule.metric] else { return false }
-            let threshold = adjustedThreshold(for: rule)
+
+            guard let value = values[rule.metric]
+             else { 
+                return false
+                 }
+
+
+            let threshold =  adjustedThreshold(for: rule)
             let triggered = (rule.op == "gt" && value > threshold) || 
                          (rule.op == "lt" && value < threshold)
             return triggered && (rule.severity == .critical || rule.severity == .important)
@@ -1722,7 +1755,11 @@ final class ExerciseEngine {
         
 
         return rules.filter { rule in
-            if !applies(rule: rule, postureMode: postureMode, exerciseTag: exerciseTag) { return false }
+            if !applies(rule:  rule, postureMode: postureMode, exerciseTag:   exerciseTag) 
+            { 
+                return false 
+            }
+            
             guard let value = values[rule.metric] else { return false }
             let threshold = adjustedThreshold(for: rule)
             
@@ -1735,26 +1772,45 @@ final class ExerciseEngine {
     }
 
     private func applies(rule: FeedbackRule, postureMode: PushUpPostureMode, exerciseTag: String) -> Bool {
-        guard let tags = rule.appliesIn, !tags.isEmpty else { return true }
+        guard let tags = rule.appliesIn, !tags.isEmpty 
+        else { 
+            return true 
+            }
+
+
         let modeTag = (postureMode == .side) ? "side" : (postureMode == .front ? "front" : "none")
         let exerciseTags = ["pushup", "squat", "pullup"]
+
+        
         if tags.contains(where: { exerciseTags.contains($0) }) && !tags.contains(exerciseTag) {
             return false
         }
-        let viewTags = ["front", "side"]
+        let   viewTags = ["front", "side"]
+
         let ruleHasViewTag = tags.contains(where: { viewTags.contains($0) })
-        if ruleHasViewTag && !tags.contains(modeTag) {
+        if ruleHasViewTag && !tags.contains(modeTag) 
+        {
             return false
         }
-        if tags.contains("portrait") && !isPortraitMode { return false }
-        if tags.contains("landscape") && isPortraitMode { return false }
-        if tags.contains("fullBody") && feedbackFocus != .fullBody { return false }
-        if tags.contains("armsOnly") && feedbackFocus != .armsOnly { return false }
+
+        if tags.contains("portrait") && !isPortraitMode { 
+            return false 
+            }
+        if tags.contains("landscape") && isPortraitMode { 
+            return false 
+            }
+        if tags.contains("fullBody") && feedbackFocus != .fullBody 
+        { return false 
+        }
+        if tags.contains("armsOnly") && feedbackFocus != .armsOnly { 
+            return false }
         return true
     }
 
     private func severityRank(_ severity: RuleSeverity) -> Int {
+
         switch severity {
+
         case .critical: return 3
         case .important: return 2
         case .minor: return 1
@@ -1763,14 +1819,19 @@ final class ExerciseEngine {
 
     private func adjustedThreshold(for rule: FeedbackRule) -> Double {
         switch rule.metric {
+
         case "forwardLean":
-            if let base = squatCalibratedLeanBaseline {
+
+            if let base = squatCalibratedLeanBaseline 
+            {
                 let mult: Double = (rule.severity == .critical) ? 1.3 : 1.1
                 return max(rule.threshold, base * mult)
             }
             return rule.threshold
+
         case "kneeForwardTravel":
             if let base = squatCalibratedKneeFwdBaseline {
+
                 let mult: Double = (rule.severity == .critical) ? 1.3 : 1.1
                 return max(rule.threshold, base * mult)
             }
@@ -1781,16 +1842,20 @@ final class ExerciseEngine {
                 guard calibrationRepCount >= calibrationReps else { return rule.threshold }
         let isGreater = rule.op == "gt"
         switch rule.metric {
+
+
         case "hipDropRatio":
             if let base = calibrationHipDrop {
                 let scaled = base * severityMultiplier(for: rule.severity)
-                return isGreater ? max(rule.threshold, scaled) : max(rule.threshold, scaled)
+                return isGreater ?  max(rule.threshold, scaled) : max(rule.threshold, scaled)
             }
+
         case "elbowFlareRatio":
             if let base = calibrationElbowFlareRatio {
                 let scaled = base * severityMultiplier(for: rule.severity)
                 return isGreater ? max(rule.threshold, scaled) : max(rule.threshold, scaled)
             }
+
         case "shoulderAsym":
             if let base = calibrationShoulderAsym {
                 let scaled = base * severityMultiplier(for: rule.severity)
@@ -1814,23 +1879,29 @@ final class ExerciseEngine {
     }
 
     private func severityMultiplier(for severity: RuleSeverity) -> Double {
+        
         switch severity {
+
         case .critical: return sensitivity.redMultiplier
         case .important: return sensitivity.yellowMultiplier
         case .minor: return 1.0
+
         }
     }
 
     private func label(for severity: RuleSeverity) -> String {
+
         switch severity {
         case .critical: return "CRITICAL"
         case .important: return "IMPORTANT"
         case .minor: return "MINOR"
         }
+
     }
 
     private func riskLevel(for severity: RuleSeverity) -> RiskLevel {
         switch severity {
+
         case .critical: return .critical
         case .important: return .medium
         case .minor: return .low
@@ -1842,6 +1913,7 @@ final class ExerciseEngine {
         var colors = OverlayColors.neutral
         
         if postureMode == .side {
+
             if metrics.backAngle < 155 {
                 colors.torso = .red
                 colors.hasCritical = true
@@ -1862,29 +1934,32 @@ final class ExerciseEngine {
                 colors.leftArm = .green
                 colors.rightArm = .green
             }
+
         } else if postureMode == .front {
-            let hipBase = calibrationHipDrop ?? pushUpConfig.hipBaseDefault
-            let flareBase = calibrationElbowFlareRatio ?? pushUpConfig.flareBaseDefault
+            let hipBase =  calibrationHipDrop ?? pushUpConfig.hipBaseDefault
+            let flareBase =  calibrationElbowFlareRatio ?? pushUpConfig.flareBaseDefault
             let hipYellow = hipBase * sensitivity.yellowMultiplier
             let hipRed = hipBase * sensitivity.redMultiplier
             let flareYellow = flareBase * sensitivity.yellowMultiplier
             let flareRed = flareBase * sensitivity.redMultiplier
             
-            if frontMetrics.elbowFlareRatio > flareRed {
+            if  frontMetrics.elbowFlareRatio > flareRed {
                 colors.leftArm = .red
                 colors.rightArm = .red
-                colors.hasCritical = true
-            } else if frontMetrics.elbowFlareRatio > flareYellow {
+                 colors.hasCritical = true
+            }  else if frontMetrics.elbowFlareRatio > flareYellow {
                 colors.leftArm = .orange
                 colors.rightArm = .orange
             } else if elbowAngleDiff > 30 {
                 colors.leftArm = .orange
                 colors.rightArm = .orange
             } else {
+
                 colors.leftArm = .green
                 colors.rightArm = .green
             }
             
+
             if feedbackFocus == .fullBody && !isPortraitMode {
                 if frontMetrics.hipDropRatio > hipRed {
                     colors.torso = .red
@@ -1905,7 +1980,11 @@ final class ExerciseEngine {
     }
     
     private func depthProgressFor(currentAngle: Double, minAngle: Double, maxAngle: Double) -> Double {
-        if maxAngle <= minAngle { return 0 }
+
+
+        if maxAngle <= minAngle { 
+            return 0 
+            }
         let progress = (maxAngle - currentAngle) / (maxAngle - minAngle)
         return max(0.0, min(1.0, progress))
     }

@@ -18,6 +18,8 @@ struct MainMenuView: View {
         ("Squat", "squat", "Target: Quads & Glutes"),
         ("Pull-Up", "pull_up", "Target: Back & Biceps")
     ]
+
+
     
     @State private var showRepPicker = false
     @State private var navigateToSession = false
@@ -40,6 +42,7 @@ struct MainMenuView: View {
                 VStack(alignment: .leading, spacing: 8)
                  {
                     Text("Calisthenics Coach")
+
 
                         .font(.system(size: 34, weight: .heavy, design: .rounded))
                         .foregroundColor(palette.textPrimary)
@@ -100,6 +103,7 @@ struct MainMenuView: View {
     
 
 
+
     private var repPickerSheet: some View {
 
         let palette = Theme.palette(choice: settings.themeChoice, darkMode: settings.darkMode)
@@ -136,6 +140,7 @@ struct MainMenuView: View {
                         Text(mode.rawValue).tag(mode)
                     }
                 }
+
                 .pickerStyle(.segmented)
                 .padding(.horizontal)
             }
@@ -184,6 +189,7 @@ struct MainMenuView: View {
             
             Button {
                 showRepPicker = false
+
             } label: {
                 Text("Cancel")
                     .foregroundColor(.secondary)
@@ -212,6 +218,7 @@ struct MainMenuView: View {
 
 
 struct ExerciseCard: View {
+
     let name: String
     let imageName: String
     let detail: String
@@ -242,6 +249,7 @@ struct ExerciseCard: View {
                 .font(.footnote)
                 .foregroundColor(palette.textSecondary)
         }
+        
         .padding()
         .background(palette.card)
         .cornerRadius(15)

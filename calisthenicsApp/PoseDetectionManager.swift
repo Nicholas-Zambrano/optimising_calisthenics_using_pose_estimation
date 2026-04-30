@@ -39,6 +39,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
     var studyConditionOrder: Int = 1
     var isStudyModeActive: Bool = false
 
+
     private let sessionQueue = DispatchQueue(label: "com.calisthenics.sessionQueue")
     private let videoQueue = DispatchQueue(label: "com.calisthenics.videoQueue")
     @Published var squatViewMode: SquatViewMode = .auto
@@ -238,7 +239,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
             if effectivePostureMode == .side {
                 let sideHipVis = hip.visibility?.floatValue ?? 0
                 let sideAnkleVis = ankle.visibility?.floatValue ?? 0
-                let sideWristVis = wrist.visibility?.floatValue ?? 0
+                let sideWristVis = wrist.visibility?.floatValue ??  0
                 let sideElbowVis = elbow.visibility?.floatValue ?? 0
                 anklesVisible = sideAnkleVis >= sideMinVis
                 hipsVisible = sideHipVis >= sideMinVis && anklesVisible
@@ -275,6 +276,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
                 }
             }
             
+
 
             let leftElbowAngle = self.evaluator.calculateAngle(p1: leftShoulder, p2: landmarks[13], p3: landmarks[15])
             let rightElbowAngle = self.evaluator.calculateAngle(p1: rightShoulder, p2: landmarks[14], p3: landmarks[16])
@@ -409,7 +411,8 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
                 timestampMS: timestampMS
             )
 
-            let prevRepCountPu = repCount
+
+            let prevRepCountPu =  repCount
             repCount = output.repCount
             cleanReps = output.cleanReps
             overallScore = output.overallScore
@@ -419,10 +422,10 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
             secondaryHint = output.secondaryHint
             currentRisk = output.currentRisk
             lastRepScore = output.lastRepScore
-            lastRepAllMessages = engine.lastRepAllMessages
+            lastRepAllMessages =  engine.lastRepAllMessages
             isSessionComplete = output.isSessionComplete
             sessionSummary = output.sessionSummary
-            debugText = output.debugText
+            debugText =  output.debugText
 
             if isStudyModeActive && output.repCount > prevRepCountPu 
             {
@@ -485,6 +488,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
         }
     }
     
+
     
     func toggleCamera() {
         DispatchQueue.main.async {
@@ -510,7 +514,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
                 }
                 self.startCamera()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    self.isDetectionPaused = false
+                     self.isDetectionPaused = false
                 }
             }
         }
@@ -537,17 +541,21 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
             
             if self.session.canAddInput(videoInput) { self.session.addInput(videoInput) }
             
+
+
             if self.session.canSetSessionPreset(.hd1280x720) {
                 self.session.sessionPreset = .hd1280x720
             } else {
                 self.session.sessionPreset = .high
             }
             
+
             let videoOutput = AVCaptureVideoDataOutput()
             videoOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
             videoOutput.alwaysDiscardsLateVideoFrames = true
             videoOutput.setSampleBufferDelegate(self, queue: self.videoQueue)
             
+
             if self.session.canAddOutput(videoOutput) {
                 self.session.addOutput(videoOutput)
                 
@@ -572,6 +580,7 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
     
     
     private func setupLandmarker() {
+
         
         guard let modelPath = Bundle.main.path(forResource: "pose_landmarker_lite", ofType: "task") else { return }
         let options = PoseLandmarkerOptions()
@@ -585,7 +594,8 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
     func speakFeedback(_ message: String, force: Bool = false) {
         if !force {
             guard message != lastSpokenMessage, !synthesiser.isSpeaking else { return }
-        } else if synthesiser.isSpeaking {
+        } 
+        else if synthesiser.isSpeaking {
             return
         }
         let utterance = AVSpeechUtterance(string: message)
@@ -597,9 +607,11 @@ class PoseDetectionManager: NSObject, PoseLandmarkerLiveStreamDelegate, Observab
 
 }
 
+
 extension PoseDetectionManager: AVCaptureVideoDataOutputSampleBufferDelegate {
     nonisolated func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         autoreleasepool {
+
             guard !isProcessingFrame, !isDetectionPaused, !isSessionComplete else { return }
             guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
             let timestampInMS = Int(CMTimeGetSeconds(CMSampleBufferGetPresentationTimeStamp(sampleBuffer)) * 1000)
