@@ -1,4 +1,4 @@
-# Calisthenics Form Correction App
+# Optimising_calisthenics_using_pose_estimation
 
 This app was built for my final year project at the University of Bath. The aim of the project is to explore how pose estimation can be used to give users immediate feedback on their exercise form during calisthenics movements.
 
